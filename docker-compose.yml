@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: baseball-db
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ALLOW_EMPTY_PASSWORD: ${MYSQL_ALLOW_EMPTY_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  node:
+    platform: linux/amd64
+    build:
+      context: ./baseball
+      dockerfile: Dockerfile
+    container_name: baseball-node
+    working_dir: /app
+    volumes:
+      - ./baseball:/app
+      - /app/node_modules
+      - ./py_baseball:/app/py_baseball
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      BASEBALL_DATA_DIR: /app/py_baseball
+    depends_on:
+      db:
+        condition: service_healthy
+    command: bash -lc "npm ci && tail -f /dev/null"
+
+  py:
+    image: python:3.11-slim
+    container_name: baseball-py
+    working_dir: /app
+    volumes:
+      - ./py_baseball:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "pip install -r requirements.txt && tail -f /dev/null"
+
+volumes:
+  mysql-data:

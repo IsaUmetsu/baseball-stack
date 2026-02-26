@@ -1,0 +1,48 @@
+# env
+.env
+.env.local
+
+# mysql
+mysql-data/
+
+# --- baseball project ---
+baseball/node_modules/
+baseball/*.log
+baseball/*.gz
+baseball/*.txt
+baseball/data/
+baseball/data1_p/
+baseball/data2_p/
+baseball/data3_p/
+baseball/record/
+baseball/for_tweet/
+baseball/scraping/json/
+baseball/scraping/html/
+baseball/scraping/screenshot/
+baseball/sql/generated/
+baseball/scheduler/logs/
+
+baseball/tweet/util/twitter.js
+baseball/tweet/twitter.js
+baseball/ts/twitter.ts
+baseball/for_python/query/sql/*.sql
+baseball/for_python/tweet/twitter.ts
+baseball/for_python/query/createQuery.ts
+baseball/for_python/lineconfig.json
+baseball/gen_query.sql
+
+# --- py_baseball project ---
+py_baseball/__pycache__/
+py_baseball/*.log
+
+# generated / runtime data
+py_baseball/output/
+py_baseball/cards/
+py_baseball/starter/
+py_baseball/pitcherStats/
+py_baseball/batterStats/
+py_baseball/text/
+py_baseball/farm/
+
+# mac
+.DS_Store
