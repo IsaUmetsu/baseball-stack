@@ -1,3 +1,8 @@
+import os
+
+# Docker内では環境変数PY_BASEBALL_DATA_DIR、ローカルmacOSではデフォルトパスを使用
+_BASE = os.environ.get("PY_BASEBALL_DATA_DIR", "/Users/IsamuUmetsu/dev/py_baseball")
+
 def getConfig(key):
     config = {
         "scheduleUrl": "https://baseball.yahoo.co.jp/npb/schedule/?date=[date]",
@@ -6,13 +11,13 @@ def getConfig(key):
         "gameStatsUrl": "https://baseball.yahoo.co.jp/npb/game/[dateGameNo]/stats",
         "gameTextUrl": "https://baseball.yahoo.co.jp/npb/game/[dateGameNo]/text",
         "gameIndexUrl": "https://baseball.yahoo.co.jp/npb/game/[dateGameNo]/index",
-        "pathBase": "/Users/IsamuUmetsu/dev/py_baseball/output",
-        "pathBaseCards": "/Users/IsamuUmetsu/dev/py_baseball/cards",
-        "pathBaseStarter": "/Users/IsamuUmetsu/dev/py_baseball/starter",
-        "pathPitcherStats": "/Users/IsamuUmetsu/dev/py_baseball/pitcherStats",
-        "pathBatterStats": "/Users/IsamuUmetsu/dev/py_baseball/batterStats",
-        "pathTextStats": "/Users/IsamuUmetsu/dev/py_baseball/text",
-        "pathBaseTest": "/Users/IsamuUmetsu/dev/py_baseball/test",
+        "pathBase": os.path.join(_BASE, "output"),
+        "pathBaseCards": os.path.join(_BASE, "cards"),
+        "pathBaseStarter": os.path.join(_BASE, "starter"),
+        "pathPitcherStats": os.path.join(_BASE, "pitcherStats"),
+        "pathBatterStats": os.path.join(_BASE, "batterStats"),
+        "pathTextStats": os.path.join(_BASE, "text"),
+        "pathBaseTest": os.path.join(_BASE, "test"),
     }
     return config[key]
 

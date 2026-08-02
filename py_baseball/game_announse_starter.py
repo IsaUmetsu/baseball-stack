@@ -27,8 +27,8 @@ args = parser.parse_args()
 # driver生成
 driver = getFirefoxDriver()
 # シーズン開始日設定
-targetDate = datetime.datetime.strptime("2023" + args.season_start, "%Y%m%d")
-dateEnd = datetime.datetime.strptime("2023" + args.season_end, "%Y%m%d")
+targetDate = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_start, "%Y%m%d")
+dateEnd = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_end, "%Y%m%d")
 
 print("----- current time: {0} -----".format(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 
@@ -52,7 +52,7 @@ try:
             pathDate = targetDate.strftime("%Y%m%d")
             fullPathDate = "/".join([getConfig("pathBaseStarter"), pathDate])
             if not os.path.exists(fullPathDate):
-                os.mkdir(fullPathDate)
+                os.makedirs(fullPathDate)
 
             # ゲーム番号生成
             gameNo = str(idx + 1)

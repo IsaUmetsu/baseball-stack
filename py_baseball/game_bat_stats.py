@@ -111,7 +111,7 @@ try:
             pathDate = targetDate.strftime("%Y%m%d")
             fullPathDate = "/".join([getConfig("pathBatterStats"), pathDate])
             if not os.path.exists(fullPathDate):
-                os.mkdir(fullPathDate)
+                os.makedirs(fullPathDate)
 
             # # 試合番号生成
             # gameNo = util.getGameNo(gameCard, pathDate)

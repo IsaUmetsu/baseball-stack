@@ -26,8 +26,8 @@ args = parser.parse_args()
 # driver生成
 driver = getFirefoxDriver()
 # シーズン開始日設定
-targetDate = datetime.datetime.strptime("2023" + args.season_start, "%Y%m%d")
-dateEnd = datetime.datetime.strptime("2023" + args.season_end, "%Y%m%d")
+targetDate = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_start, "%Y%m%d")
+dateEnd = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_end, "%Y%m%d")
 
 def createPitchStatsDetail(rows):
     statsTupleList = []
@@ -105,7 +105,7 @@ try:
             dateStr = targetDate.strftime("%Y%m%d")
             fullPathDate = "/".join([getConfig("pathPitcherStats"), dateStr])
             if not os.path.exists(fullPathDate):
-                os.mkdir(fullPathDate)
+                os.makedirs(fullPathDate)
 
             # ゲーム番号生成
             gameNo = str(idx + 1)
@@ -175,7 +175,7 @@ try:
             # 日付ディレクトリ作成 (bat)
             fullPathDate = "/".join([getConfig("pathBatterStats"), dateStr])
             if not os.path.exists(fullPathDate):
-                os.mkdir(fullPathDate)
+                os.makedirs(fullPathDate)
             # bat stats
             awayBatStats = createBatStats(util.getElems("awayBatStats"))
             homeBatStats = createBatStats(util.getElems("homeBatStats"))
@@ -197,7 +197,7 @@ try:
             # 日付ディレクトリ作成
             fullPathDate = "/".join([getConfig("pathTextStats"), dateStr])
             if not os.path.exists(fullPathDate):
-                os.mkdir(fullPathDate)
+                os.makedirs(fullPathDate)
             # 指定試合の[テキスト速報]画面へ遷移
             textUrl = getConfig("gameTextUrl").replace("npb", "npb_practice") if isTokyoOlympicsPeriod(targetDate) else getConfig("gameTextUrl")
             driver.get(textUrl.replace("[dateGameNo]", dateGameNo))

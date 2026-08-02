@@ -49,7 +49,7 @@ try:
             pathDate = targetDate.strftime("%Y%m%d")
             fullPathDate = "/".join([getConfig("pathBaseCards"), pathDate])
             if not os.path.exists(fullPathDate):
-                os.mkdir(fullPathDate)
+                os.makedirs(fullPathDate)
 
             # 特定試合 指定時
             if args.specify:
