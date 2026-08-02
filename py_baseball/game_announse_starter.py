@@ -13,6 +13,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selector import getSelector
 from config import getConfig, getTeamInitial, getLeague2021, isTokyoOlympicsPeriod
 from driver import getChromeDriver, getFirefoxDriver
+from driver_praywright import Browser
 from util import Util
 from common import getGameNos, commonWait
 

@@ -41,7 +41,9 @@ services:
     command: bash -lc "npm ci && tail -f /dev/null"
 
   py:
-    image: python:3.11-slim
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: baseball-py
     working_dir: /app
     volumes:
