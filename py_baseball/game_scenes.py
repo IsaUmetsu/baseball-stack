@@ -27,12 +27,30 @@ def getInningSelector(inning, topBtm):
     topBtmDic = { "表": 1, "裏": 2 }
     return getSelector("inningBase").format(topBtmDic[topBtm], inning + 1)
 
+def safe_click(elem):
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
+    commonWait()
+    try:
+        elem.click()
+    except Exception:
+        driver.execute_script("arguments[0].click();", elem)
+    commonWait()
+
 # driver生成
 driver = getFirefoxDriver()
 util = Util(driver)
 # シーズン開始日設定
-targetDate = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_start, "%Y%m%d")
-dateEnd = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_end, "%Y%m%d")
+def parse_date(date_str):
+    cleaned = re.sub(r'\D', '', date_str)
+    if len(cleaned) == 4:
+        return datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + cleaned, "%Y%m%d")
+    elif len(cleaned) == 8:
+        return datetime.datetime.strptime(cleaned, "%Y%m%d")
+    else:
+        raise ValueError(f"Invalid date format: {date_str}")
+
+targetDate = parse_date(args.season_start)
+dateEnd = parse_date(args.season_end)
 
 print("----- current time: {0} -----".format(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 
@@ -157,15 +175,19 @@ try:
 
             # 指定のイニングに遷移
             selectorInning = getInningSelector(fromInning, fromTopBtm)
-            contentMain.find_element_by_css_selector(selectorInning).click()
-            commonWait()
+            elem_inning = contentMain.find_element_by_css_selector(selectorInning)
+            safe_click(elem_inning)
+
+            contentMain = driver.find_element_by_css_selector("#contentMain")
+            util = Util(contentMain)
 
             # 取得対象(開始) 1回裏以降の場合
             if fromInning > 1 or fromTopBtm == "裏":
                 #「戻る」ボタン押下
                 selectorPrevButton = "#replay .back a"
-                contentMain.find_element_by_css_selector(selectorPrevButton).click()
-                commonWait()
+                safe_click(contentMain.find_element_by_css_selector(selectorPrevButton))
+                contentMain = driver.find_element_by_css_selector("#contentMain")
+                util = Util(contentMain)
                 while 1:
                     # 現在の打者数
                     currentBatterCnt = util.getText("inningBatterCnt")
@@ -173,14 +195,16 @@ try:
                     if len(currentBatterCnt) > 0:
                         #「次へ」ボタン押下
                         selectorNextButton = "#replay .next a"
-                        contentMain.find_element_by_css_selector(selectorNextButton).click()
-                        commonWait()
+                        safe_click(contentMain.find_element_by_css_selector(selectorNextButton))
+                        contentMain = driver.find_element_by_css_selector("#contentMain")
+                        util = Util(contentMain)
                         # シート変更の初期シーンに移動したら抜ける
                         break
                     # 依然シートの変更がある場合は「戻る」ボタン押下
                     else:
-                        contentMain.find_element_by_css_selector(selectorPrevButton).click()
-                        commonWait()   
+                        safe_click(contentMain.find_element_by_css_selector(selectorPrevButton))
+                        contentMain = driver.find_element_by_css_selector("#contentMain")
+                        util = Util(contentMain)
 
             # 処理開始シーン定義
             scene = fileCount
@@ -382,8 +406,9 @@ try:
 
                     #「次へ」ボタン押下
                     selectorNextButton = "#replay .next a"
-                    contentMain.find_element_by_css_selector(selectorNextButton).click()
-                    commonWait()
+                    safe_click(contentMain.find_element_by_css_selector(selectorNextButton))
+                    contentMain = driver.find_element_by_css_selector("#contentMain")
+                    util = Util(contentMain)
 
             except TimeoutException as te:
                 print(te)

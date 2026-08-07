@@ -71,8 +71,17 @@ def createPitchStats(pitchStatusElem):
 # driver生成
 driver = getFirefoxDriver()
 # シーズン開始日設定
-targetDate = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_start, "%Y%m%d")
-dateEnd = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_end, "%Y%m%d")
+def parse_date(date_str):
+    cleaned = re.sub(r'\D', '', date_str)
+    if len(cleaned) == 4:
+        return datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + cleaned, "%Y%m%d")
+    elif len(cleaned) == 8:
+        return datetime.datetime.strptime(cleaned, "%Y%m%d")
+    else:
+        raise ValueError(f"Invalid date format: {date_str}")
+
+targetDate = parse_date(args.season_start)
+dateEnd = parse_date(args.season_end)
 
 print("----- current time: {0} -----".format(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 

@@ -35,17 +35,17 @@ selectorList = {
 
     ### 出場成績
     ## 野手成績
-    "awayTeamName": "#gm_stats .bb-modCommon01:nth-child(1) .bb-table--resultScoreBoard:nth-child(3) th",
-    "homeTeamName": "#gm_stats .bb-modCommon01:nth-child(1) .bb-table--resultScoreBoard:nth-child(4) th",
-    "awayScoreBoard": "#gm_stats .bb-modCommon01:nth-child(1) .bb-table--resultScoreBoard:nth-child(3) tr td",
-    "homeScoreBoard": "#gm_stats .bb-modCommon01:nth-child(1) .bb-table--resultScoreBoard:nth-child(4) tr td",
-    "awayBatStats": "#gm_stats .bb-modCommon01:nth-child(1) .bb-blowResultsTable:nth-child(2) table tbody tr",
-    "homeBatStats": "#gm_stats .bb-modCommon01:nth-child(1) .bb-blowResultsTable:nth-child(5) table tbody tr",
+    "awayTeamName": "#async-gameBatterStats .bb-teamScoreTable__row--away th",
+    "homeTeamName": "#async-gameBatterStats .bb-teamScoreTable__row--home th",
+    "awayScoreBoard": "#async-gameBatterStats .bb-teamScoreTable__row--away td",
+    "homeScoreBoard": "#async-gameBatterStats .bb-teamScoreTable__row--home td",
+    "awayBatStats": "#async-gameBatterStats .bb-modBlowResultsTable > div:nth-of-type(1) table tbody tr",
+    "homeBatStats": "#async-gameBatterStats .bb-modBlowResultsTable > div:nth-of-type(4) table tbody tr",
     ## 投手成績
-    "awayTeamFullName": "#gm_stats .bb-modCommon01:nth-child(2) .bb-modCommon02:nth-child(2) header",
-    "homeTeamFullName": "#gm_stats .bb-modCommon01:nth-child(2) .bb-modCommon02:nth-child(3) header",
-    "awayPitchStats": "#gm_stats .bb-modCommon01:nth-child(2) .bb-modCommon02:nth-child(2) table tbody tr",
-    "homePitchStats": "#gm_stats .bb-modCommon01:nth-child(2) .bb-modCommon02:nth-child(3) table tbody tr",
+    "awayTeamFullName": "#async-gamePitcherStats section.bb-modCommon03:nth-of-type(1) header",
+    "homeTeamFullName": "#async-gamePitcherStats section.bb-modCommon03:nth-of-type(2) header",
+    "awayPitchStats": "#async-gamePitcherStats section.bb-modCommon03:nth-of-type(1) table tbody tr",
+    "homePitchStats": "#async-gamePitcherStats section.bb-modCommon03:nth-of-type(2) table tbody tr",
 
     ## 速報詳細
     ## ライブヘッダ

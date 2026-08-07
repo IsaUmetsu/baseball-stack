@@ -26,8 +26,17 @@ args = parser.parse_args()
 # driver生成
 driver = getFirefoxDriver()
 # シーズン開始日設定
-targetDate = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_start, "%Y%m%d")
-dateEnd = datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + args.season_end, "%Y%m%d")
+def parse_date(date_str):
+    cleaned = re.sub(r'\D', '', date_str)
+    if len(cleaned) == 4:
+        return datetime.datetime.strptime(datetime.datetime.now().strftime("%Y") + cleaned, "%Y%m%d")
+    elif len(cleaned) == 8:
+        return datetime.datetime.strptime(cleaned, "%Y%m%d")
+    else:
+        raise ValueError(f"Invalid date format: {date_str}")
+
+targetDate = parse_date(args.season_start)
+dateEnd = parse_date(args.season_end)
 
 def createPitchStatsDetail(rows):
     statsTupleList = []
@@ -133,7 +142,7 @@ try:
             try:
                 gameStateElem = driver.find_element_by_css_selector(getSelector("gameState"))
                 gameState = gameStateElem.get_attribute("textContent")
-                gameState.strip()
+                gameState = gameState.strip()
                 isFinished = gameState in ["試合終了", "試合中止", "ノーゲーム"]
             except:
                 print("----- not found game gameNo: {0}, page: {1} -----".format(gameNo, gameNoStr))
@@ -144,8 +153,7 @@ try:
             driver.get(statsUrl.replace("[dateGameNo]", dateGameNo))
             commonWait()
 
-            contentMain = driver.find_element_by_css_selector("#gm_stats")
-            util = Util(contentMain)
+            util = Util(driver)
 
             awayTeam = getTeamInitialByFullName(util.getText("awayTeamFullName"))
             homeTeam = getTeamInitialByFullName(util.getText("homeTeamFullName"))
