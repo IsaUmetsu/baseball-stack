@@ -9,6 +9,9 @@ import argparse
 
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from selector import getSelector
 from config import getConfig, getLeague2021, isTokyoOlympicsPeriod
@@ -29,12 +32,10 @@ def getInningSelector(inning, topBtm):
 
 def safe_click(elem):
     driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
-    commonWait()
     try:
         elem.click()
     except Exception:
         driver.execute_script("arguments[0].click();", elem)
-    commonWait()
 
 # driver生成
 driver = getFirefoxDriver()
@@ -58,7 +59,7 @@ try:
     while targetDate <= dateEnd:
         # 指定日の[日程・結果]画面へ遷移
         driver.get(getConfig("scheduleUrl").replace("[date]", targetDate.strftime("%Y-%m-%d")))
-        commonWait()
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, getSelector("gameCards"))))
 
         gameNos = []
         try:
@@ -69,6 +70,13 @@ try:
             continue
 
         for idx, gameNoStr in enumerate(gameNos):
+            # 過去保存データの判定に関する変数を初期化
+            savedLatestInningTopBtm = ""
+            fromInning = 1
+            fromTopBtm = "表"
+            toInning = 0
+            toTopBtm = ""
+
             # 日付ディレクトリ作成
             dateStr = targetDate.strftime("%Y%m%d")
             fullPathDate = "/".join([getConfig("pathBase"), dateStr])
@@ -98,7 +106,7 @@ try:
             #「一球速報」に遷移
             scoreUrl = getConfig("gameScoreUrl").replace("npb", "npb_practice") if isTokyoOlympicsPeriod(targetDate) else getConfig("gameScoreUrl")
             driver.get(scoreUrl.replace("[dateGameNo]", dateGameNo))
-            commonWait()
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
             # メインコンテンツ
             contentMain = ""
             try:
@@ -144,50 +152,109 @@ try:
                 currentInning, currentTopBtm = currentInningTopBtm.split("回")
                 toInning = int(currentInning)
                 toTopBtm = currentTopBtm
+            else:
+                # 試合終了の場合、全件取得するためtoInningとtoTopBtmは初期値(0と"")のままにする
+                pass
 
-            # 過去に保存済みの場合
+            # 過去に保存済みの場合の判定と再開処理
             if fileCount > 0:
-                # 取得対象(開始) のイニング決定
-                jsonOpen = open("{0}/{1}.json".format(fullGamePath, fileCount))
-                loadedJson = json.load(jsonOpen)
-                # 保存済みの最新イニング
-                savedLatestInningTopBtm = loadedJson["liveHeader"]["inning"]
-                print("----- game: {0}, savedLatestInningTopBtm: {1} -----".format(gameNo, savedLatestInningTopBtm))
-                # 試合終了まで取得済みの場合、保存対象外
-                if savedLatestInningTopBtm in ["試合終了", "試合中止", "ノーゲーム"]:
-                    continue
-                elif savedLatestInningTopBtm in ["試合前"]:
-                    # ファイルカウントを0に戻す
+                loadedJson = {}
+                try:
+                    with open("{0}/{1}.json".format(fullGamePath, fileCount), 'r') as f:
+                        loadedJson = json.load(f)
+                except Exception as e:
+                    # 破損ファイルなどの場合は最初から再取得する
                     fileCount = 0
-                    print('not start game')
-                # 試合途中まで取得済みの場合
-                else:
-                    currentInning, currentTopBtm = savedLatestInningTopBtm.split("回")
-                    fromInning = int(currentInning)
-                    # 
-                    if currentTopBtm == "表":
-                        # 2回表〜9回表の場合は「裏」にする
-                        fromTopBtm = "裏"
-                    # 2回裏〜9回裏の場合は、1つイニングを進めて「表」にする
-                    elif currentTopBtm == "裏":
-                        fromInning = fromInning + 1
-                        fromTopBtm = "表"
+                    print('loaded json error, scrape from scratch:', e)
+
+                if fileCount > 0:
+                    savedLatestInningTopBtm = loadedJson.get("liveHeader", {}).get("inning", "")
+                    print("----- game: {0}, savedLatestInningTopBtm: {1}, fileCount: {2} -----".format(gameNo, savedLatestInningTopBtm, fileCount))
+
+                    # 1. 保存完了状態（スキップ対象）の判定
+                    if savedLatestInningTopBtm in ["試合終了", "試合中止", "ノーゲーム"]:
+                        # 正常に保存が完了しているため、次の試合へスキップ
+                        continue
+                    elif savedLatestInningTopBtm == "試合前":
+                        # 「試合前」として保存されている場合は、1.jsonを上書きして1回表から新規取得を開始
+                        fileCount = 0
+                        print('game not started in previous save, restart scrape from scratch')
+
+                    # 2. 途中で処理が中断されている場合の再開処理
+                    elif bool(re.match(r'^\d+回(表|裏)$', savedLatestInningTopBtm)):
+                        currentInning, currentTopBtm = savedLatestInningTopBtm.split("回")
+                        fromInning = int(currentInning)
+                        if currentTopBtm == "表":
+                            # 〇回表の場合は「〇回裏」から再開
+                            fromTopBtm = "裏"
+                        elif currentTopBtm == "裏":
+                            # 〇回裏の場合は「(〇+1)回表」から再開
+                            fromInning = fromInning + 1
+                            fromTopBtm = "表"
+
+                    # 3. それ以外の予期しない状態（破損やダミーなど）
+                    else:
+                        fileCount = 0
+                        print('invalid inning format in saved data, scrape from scratch')
 
             # 指定のイニングに遷移
             selectorInning = getInningSelector(fromInning, fromTopBtm)
             elem_inning = contentMain.find_element_by_css_selector(selectorInning)
             safe_click(elem_inning)
+            time.sleep(1)
 
             contentMain = driver.find_element_by_css_selector("#contentMain")
             util = Util(contentMain)
+
+            # 一球速報・リプレイ表示の開始
+            # イニングタブをクリックした直後は「全般サマリー」画面になっており、一球速報モード（リプレイ）が開始していない場合がある
+            # そのため、#replay 内の最初のリンクや、リプレイ開始用の要素をクリックする
+            try:
+                # すでに「次へ」ボタンが存在する場合は一球速報モードになっている
+                contentMain.find_element_by_css_selector("#replay .next a")
+            except NoSuchElementException:
+                # 「次へ」ボタンがない場合、リプレイを開始するための要素を探索してクリックする
+                start_element = None
+                selectors_to_try = [
+                    "#replay a",                  # replay内の全てのリンク
+                    "#replay dl dd a",            # 打者リストのリンク
+                    "#replay td a",               # テーブル内のリンク
+                    "#replay dt",                 # 打者数のヘッダなど
+                    "#replay_title",              # リプレイタイトル
+                ]
+                for sel in selectors_to_try:
+                    try:
+                        elems = contentMain.find_elements_by_css_selector(sel)
+                        if len(elems) > 0:
+                            # 最初の有効な要素を特定してクリック
+                            for elem in elems:
+                                if elem.is_displayed() and elem.is_enabled():
+                                    start_element = elem
+                                    break
+                            if start_element:
+                                break
+                    except Exception:
+                        continue
+                
+                if start_element:
+                    safe_click(start_element)
+                    time.sleep(1)
+                    contentMain = driver.find_element_by_css_selector("#contentMain")
+                    util = Util(contentMain)
 
             # 取得対象(開始) 1回裏以降の場合
             if fromInning > 1 or fromTopBtm == "裏":
                 #「戻る」ボタン押下
                 selectorPrevButton = "#replay .back a"
-                safe_click(contentMain.find_element_by_css_selector(selectorPrevButton))
-                contentMain = driver.find_element_by_css_selector("#contentMain")
-                util = Util(contentMain)
+                try:
+                    elem_prev = contentMain.find_element_by_css_selector(selectorPrevButton)
+                    safe_click(elem_prev)
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
+                    contentMain = driver.find_element_by_css_selector("#contentMain")
+                    util = Util(contentMain)
+                except NoSuchElementException:
+                    pass
+
                 while 1:
                     # 現在の打者数
                     currentBatterCnt = util.getText("inningBatterCnt")
@@ -195,19 +262,33 @@ try:
                     if len(currentBatterCnt) > 0:
                         #「次へ」ボタン押下
                         selectorNextButton = "#replay .next a"
-                        safe_click(contentMain.find_element_by_css_selector(selectorNextButton))
-                        contentMain = driver.find_element_by_css_selector("#contentMain")
-                        util = Util(contentMain)
+                        try:
+                            elem_next = contentMain.find_element_by_css_selector(selectorNextButton)
+                            safe_click(elem_next)
+                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
+                            contentMain = driver.find_element_by_css_selector("#contentMain")
+                            util = Util(contentMain)
+                        except NoSuchElementException:
+                            break
                         # シート変更の初期シーンに移動したら抜ける
                         break
                     # 依然シートの変更がある場合は「戻る」ボタン押下
                     else:
-                        safe_click(contentMain.find_element_by_css_selector(selectorPrevButton))
-                        contentMain = driver.find_element_by_css_selector("#contentMain")
-                        util = Util(contentMain)
+                        try:
+                            elem_prev = contentMain.find_element_by_css_selector(selectorPrevButton)
+                            safe_click(elem_prev)
+                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
+                            contentMain = driver.find_element_by_css_selector("#contentMain")
+                            util = Util(contentMain)
+                        except NoSuchElementException:
+                            break
 
             # 処理開始シーン定義
             scene = fileCount
+            
+            cached_inning = None
+            cached_home_team_info = None
+            cached_away_team_info = None
 
             try:
                 while 1:
@@ -241,7 +322,7 @@ try:
                     liveBody["pitchingResult"] = util.getText("pitchingResult")
 
                     # 取得対象が存在しない場合、保存して終了
-                    if liveBody["battingResult"] in ["試合終了", "試合中止", "試合前"]:
+                    if liveBody["battingResult"] in ["試合中止", "試合前"]:
                         data["liveBody"] = liveBody
                         # save as json
                         with open("{0}/{1}.json".format(fullGamePath, scene), 'w') as f:
@@ -290,8 +371,6 @@ try:
 
                     data["liveBody"] = liveBody
                     # ------------ /ライブボディ ------------
-
-                    commonWait() # liveheader, livebody 取得後に wait
 
                     pitchInfo = {}
                     # 投球詳細
@@ -388,8 +467,57 @@ try:
 
                         return teamInfo
                     
-                    data["homeTeamInfo"] = createTeamInfo("homeTeamElemId")
-                    data["awayTeamInfo"] = createTeamInfo("awayTeamElemId")
+                    current_scene_inning = data["liveHeader"]["inning"]
+                    
+                    # キャッシュの再取得判定
+                    force_reload = False
+                    if cached_home_team_info is None or cached_away_team_info is None or cached_inning != current_scene_inning:
+                        force_reload = True
+                    else:
+                        # 現在の打者がキャッシュ内のオーダーに存在するか検証（代打検知）
+                        current_batter_name = liveBody["currentBatterInfo"]["name"]
+                        if current_batter_name:
+                            found = False
+                            for team_info in [cached_home_team_info, cached_away_team_info]:
+                                if team_info and any(player["name"] == current_batter_name for player in team_info.get("order", [])):
+                                    found = True
+                                    break
+                            if not found:
+                                force_reload = True
+
+                        # 現在の投手がキャッシュ内のバッテリー情報に存在するか検証（投手交代検知）
+                        if not force_reload:
+                            current_pitcher_name = liveBody["currentPicherInfo"]["name"]
+                            if current_pitcher_name:
+                                found = False
+                                for team_info in [cached_home_team_info, cached_away_team_info]:
+                                    if team_info and current_pitcher_name in team_info.get("batteryInfo", ""):
+                                        found = True
+                                        break
+                                if not found:
+                                    force_reload = True
+
+                        # 塁上のランナーがキャッシュ内のオーダーに存在するか検証（代走検知）
+                        if not force_reload:
+                            for runner in liveBody.get("onbaseInfo", []):
+                                runner_name = runner.get("player")
+                                if runner_name:
+                                    found = False
+                                    for team_info in [cached_home_team_info, cached_away_team_info]:
+                                        if team_info and any(player["name"] == runner_name for player in team_info.get("order", [])):
+                                            found = True
+                                            break
+                                    if not found:
+                                        force_reload = True
+                                        break
+
+                    if force_reload:
+                        cached_home_team_info = createTeamInfo("homeTeamElemId")
+                        cached_away_team_info = createTeamInfo("awayTeamElemId")
+                        cached_inning = current_scene_inning
+
+                    data["homeTeamInfo"] = cached_home_team_info
+                    data["awayTeamInfo"] = cached_away_team_info
 
                     # save as json
                     with open("{0}/{1}.json".format(fullGamePath, scene), 'w') as f:
@@ -406,9 +534,15 @@ try:
 
                     #「次へ」ボタン押下
                     selectorNextButton = "#replay .next a"
-                    safe_click(contentMain.find_element_by_css_selector(selectorNextButton))
-                    contentMain = driver.find_element_by_css_selector("#contentMain")
-                    util = Util(contentMain)
+                    try:
+                        elem_next = contentMain.find_element_by_css_selector(selectorNextButton)
+                        safe_click(elem_next)
+                        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
+                        contentMain = driver.find_element_by_css_selector("#contentMain")
+                        util = Util(contentMain)
+                    except NoSuchElementException:
+                        # 最終イニング到達時など、「次へ」ボタンが存在しない・表示されないケース
+                        break
 
             except TimeoutException as te:
                 print(te)

@@ -30,7 +30,7 @@ selectorList = {
 
     ### 一球速報
     ## イニング
-    "inningBase": "#ing_brd tbody tr:nth-child({0}) td:nth-child({1})",
+    "inningBase": "#ing_brd tbody tr:nth-child({0}) td:nth-child({1}) a",
     "topOf1": "#ing_brd tbody tr td:nth-child(2)",
 
     ### 出場成績
