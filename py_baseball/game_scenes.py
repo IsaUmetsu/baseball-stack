@@ -8,7 +8,7 @@ import os
 import argparse
 
 from selenium.common.exceptions import TimeoutException
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -374,29 +374,52 @@ try:
 
                     pitchInfo = {}
                     # 投球詳細
-                    pitchDetailsElem = util.getElems("pitchDetail")
                     pitchDetails = []
-                    for elem in pitchDetailsElem:
-                        pitchDetails.append({
-                            "judgeIcon": util.getSpecifyClass(elem, "tr td:nth-child(1) span").split(" ")[1][-1:],
-                            "pitchCnt": util.getSpecifyText(elem, "tr td:nth-child(2)"),
-                            "pitchType": util.getSpecifyText(elem, "tr td:nth-child(3)"),
-                            "pitchSpeed": util.getSpecifyText(elem, "tr td:nth-child(4)"),
-                            "pitchJudgeDetail": util.getSpecifyText(elem, "tr td:nth-child(5)")
-                        })
+                    for attempt in range(3):
+                        try:
+                            pitchDetailsElem = util.getElems("pitchDetail")
+                            current_pitchDetails = []
+                            for elem in pitchDetailsElem:
+                                current_pitchDetails.append({
+                                    "judgeIcon": util.getSpecifyClass(elem, "tr td:nth-child(1) span").split(" ")[1][-1:],
+                                    "pitchCnt": util.getSpecifyText(elem, "tr td:nth-child(2)"),
+                                    "pitchType": util.getSpecifyText(elem, "tr td:nth-child(3)"),
+                                    "pitchSpeed": util.getSpecifyText(elem, "tr td:nth-child(4)"),
+                                    "pitchJudgeDetail": util.getSpecifyText(elem, "tr td:nth-child(5)")
+                                })
+                            pitchDetails = current_pitchDetails
+                            break
+                        except StaleElementReferenceException:
+                            if attempt == 2:
+                                print("StaleElementReferenceException occurred in pitchDetails after 3 attempts. Safely continuing.")
+                            else:
+                                time.sleep(0.5)
+                                contentMain = driver.find_element_by_css_selector("#contentMain")
+                                util = Util(contentMain)
                     pitchInfo["pitchDetails"] = pitchDetails
 
                     # 投球コース
-                    pitchDetailsCourseElem = util.getElems("pitchingCourse")
                     allPitchCourse = []
-                    #
-                    for course in pitchDetailsCourseElem:
-                        courseDetailNum = re.findall(r'-?\d+', course.get_attribute("style"))
-                        # 0: top, 1: left
-                        allPitchCourse.append({
-                            "top": courseDetailNum[0],
-                            "left": courseDetailNum[1]
-                        })
+                    for attempt in range(3):
+                        try:
+                            pitchDetailsCourseElem = util.getElems("pitchingCourse")
+                            current_allPitchCourse = []
+                            for course in pitchDetailsCourseElem:
+                                courseDetailNum = re.findall(r'-?\d+', course.get_attribute("style"))
+                                # 0: top, 1: left
+                                current_allPitchCourse.append({
+                                    "top": courseDetailNum[0],
+                                    "left": courseDetailNum[1]
+                                })
+                            allPitchCourse = current_allPitchCourse
+                            break
+                        except StaleElementReferenceException:
+                            if attempt == 2:
+                                print("StaleElementReferenceException occurred in pitchingCourse after 3 attempts. Safely continuing.")
+                            else:
+                                time.sleep(0.5)
+                                contentMain = driver.find_element_by_css_selector("#contentMain")
+                                util = Util(contentMain)
 
                     pitchInfo["allPitchCourse"] = allPitchCourse
 
@@ -416,56 +439,65 @@ try:
                     data["pitchInfo"] = pitchInfo
 
                     def createTeamInfo(homeAway):
-                        teamInfo = {}
-                        # チーム名
-                        teamInfo["name"] = util.getTeamText(homeAway, "teamName")
-                        # 現在のオーダー
-                        teamOrder = []
-                        teamOrdeElem = util.getTeamElems(homeAway, "teamOrder")
-                        for elem in teamOrdeElem:
-                            if len(util.getSpecifyElems(elem, "td")) > 0:
-                                teamOrder.append({
-                                    "no": util.getSpecifyText(elem, "tr td:nth-child(1)"),
-                                    "position": util.getSpecifyText(elem, "tr td:nth-child(2)"),
-                                    "name": util.getSpecifyText(elem, "tr td:nth-child(3) a"),
-                                    "domainHand": util.getSpecifyText(elem, "tr td:nth-child(4)"),
-                                    "average": util.getSpecifyText(elem, "tr td:nth-child(5)")
-                                })
-                        teamInfo["order"] = teamOrder
-                        # バッテリー
-                        battelyInfoElem = util.getTeamElems(homeAway, "teamBattery")
-                        battelyInfo = ""
-                        for elem in battelyInfoElem:
-                            battelyInfo += elem.text
-                        teamInfo["batteryInfo"] = battelyInfo
-                        # 本塁打
-                        homerunInfoElem = util.getTeamElems(homeAway, "teamHomerun")
-                        homerunInfo = ""
-                        for elem in homerunInfoElem:
-                            homerunInfo += elem.text
-                        teamInfo["homerunInfo"] = homerunInfo
+                        global contentMain, util
+                        for attempt in range(3):
+                            try:
+                                teamInfo = {}
+                                # チーム名
+                                teamInfo["name"] = util.getTeamText(homeAway, "teamName")
+                                # 現在のオーダー
+                                teamOrder = []
+                                teamOrdeElem = util.getTeamElems(homeAway, "teamOrder")
+                                for elem in teamOrdeElem:
+                                    if len(util.getSpecifyElems(elem, "td")) > 0:
+                                        teamOrder.append({
+                                            "no": util.getSpecifyText(elem, "tr td:nth-child(1)"),
+                                            "position": util.getSpecifyText(elem, "tr td:nth-child(2)"),
+                                            "name": util.getSpecifyText(elem, "tr td:nth-child(3) a"),
+                                            "domainHand": util.getSpecifyText(elem, "tr td:nth-child(4)"),
+                                            "average": util.getSpecifyText(elem, "tr td:nth-child(5)")
+                                        })
+                                teamInfo["order"] = teamOrder
+                                # バッテリー
+                                battelyInfoElem = util.getTeamElems(homeAway, "teamBattery")
+                                battelyInfo = ""
+                                for elem in battelyInfoElem:
+                                    battelyInfo += elem.text
+                                teamInfo["batteryInfo"] = battelyInfo
+                                # 本塁打
+                                homerunInfoElem = util.getTeamElems(homeAway, "teamHomerun")
+                                homerunInfo = ""
+                                for elem in homerunInfoElem:
+                                    homerunInfo += elem.text
+                                teamInfo["homerunInfo"] = homerunInfo
 
-                        def createBenchMemberInfo(memgersElem):
-                            benchMemberInfo = []
-                            for elem in memgersElem:
-                                if elem.get_attribute("class") == "bb-splitsTable__row":
-                                    benchMemberInfo.append({
-                                        "name": util.getSpecifyText(elem, "tr td:nth-child(1) a"),
-                                        "domainHand": util.getSpecifyText(elem, "tr td:nth-child(2)"),
-                                        "average": util.getSpecifyText(elem, "tr td:nth-child(3)")
-                                    })
-                            return benchMemberInfo
+                                def createBenchMemberInfo(memgersElem):
+                                    benchMemberInfo = []
+                                    for elem in memgersElem:
+                                        if elem.get_attribute("class") == "bb-splitsTable__row":
+                                            benchMemberInfo.append({
+                                                "name": util.getSpecifyText(elem, "tr td:nth-child(1) a"),
+                                                "domainHand": util.getSpecifyText(elem, "tr td:nth-child(2)"),
+                                                "average": util.getSpecifyText(elem, "tr td:nth-child(3)")
+                                            })
+                                    return benchMemberInfo
 
-                        # ベンチ入りメンバー(投手)
-                        teamInfo["benchPitcher"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchPitcherInfo"))
-                        # ベンチ入りメンバー(捕手)
-                        teamInfo["benchCatcher"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchCatcherInfo"))
-                        # ベンチ入りメンバー(内野手)
-                        teamInfo["benchInfielder"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchInfielderInfo"))
-                        # ベンチ入りメンバー(外野手)
-                        teamInfo["benchOutfielder"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchOutfielderInfo"))
+                                # ベンチ入りメンバー(投手)
+                                teamInfo["benchPitcher"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchPitcherInfo"))
+                                # ベンチ入りメンバー(捕手)
+                                teamInfo["benchCatcher"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchCatcherInfo"))
+                                # ベンチ入りメンバー(内野手)
+                                teamInfo["benchInfielder"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchInfielderInfo"))
+                                # ベンチ入りメンバー(外野手)
+                                teamInfo["benchOutfielder"] = createBenchMemberInfo(util.getTeamElems(homeAway, "benchOutfielderInfo"))
 
-                        return teamInfo
+                                return teamInfo
+                            except StaleElementReferenceException:
+                                if attempt == 2:
+                                    raise
+                                time.sleep(0.5)
+                                contentMain = driver.find_element_by_css_selector("#contentMain")
+                                util = Util(contentMain)
                     
                     current_scene_inning = data["liveHeader"]["inning"]
                     
