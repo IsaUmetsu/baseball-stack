@@ -59,7 +59,12 @@ try:
     while targetDate <= dateEnd:
         # 指定日の[日程・結果]画面へ遷移
         driver.get(getConfig("scheduleUrl").replace("[date]", targetDate.strftime("%Y-%m-%d")))
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, getSelector("gameCards"))))
+        try:
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, getSelector("gameCards"))))
+        except TimeoutException:
+            print("No game cards found on {0} (possibly no games scheduled). Skipping...".format(targetDate.strftime("%Y-%m-%d")))
+            targetDate = targetDate + datetime.timedelta(days=1)
+            continue
 
         gameNos = []
         try:
