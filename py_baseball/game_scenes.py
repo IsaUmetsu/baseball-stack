@@ -337,13 +337,25 @@ try:
                             break;
 
                     # 塁状況
-                    onbaseInfoElem = util.getElems("onbaseInfo")
                     onbaseInfo = []
-                    for elem in onbaseInfoElem:
-                        onbaseInfo.append({
-                            "base": elem.get_attribute("id"),
-                            "player": elem.text
-                        })
+                    for attempt in range(3):
+                        try:
+                            onbaseInfoElem = util.getElems("onbaseInfo")
+                            current_onbaseInfo = []
+                            for elem in onbaseInfoElem:
+                                current_onbaseInfo.append({
+                                    "base": elem.get_attribute("id"),
+                                    "player": elem.text
+                                })
+                            onbaseInfo = current_onbaseInfo
+                            break
+                        except StaleElementReferenceException:
+                            if attempt == 2:
+                                print("StaleElementReferenceException occurred in onbaseInfo after 3 attempts. Safely continuing.")
+                            else:
+                                time.sleep(0.5)
+                                contentMain = driver.find_element_by_css_selector("#contentMain")
+                                util = Util(contentMain)
                     liveBody["onbaseInfo"] = onbaseInfo
 
                     # ボールリスト概要 ("#dakyu .bottom #nxt_batt .balllist") は省略
