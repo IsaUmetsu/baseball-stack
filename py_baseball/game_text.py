@@ -148,6 +148,22 @@ try:
             gameState.strip()
             isFinished = gameState in ["試合終了", "試合中止", "ノーゲーム"]
 
+            away = "away"
+            home = "home"
+            try:
+                try:
+                    # 試合前
+                    util_top = Util(driver.find_element_by_css_selector("#gm_recen"))
+                    away = getTeamInitial(util_top.getText("awayTeam"))
+                    home = getTeamInitial(util_top.getText("homeTeam"))
+                except NoSuchElementException as e:
+                    # 試合開始後
+                    util_top = Util(driver.find_element_by_css_selector("#ing_brd"))
+                    away = getTeamInitial(util_top.getText("awayTeamPast"))
+                    home = getTeamInitial(util_top.getText("homeTeamPast"))
+            except Exception as e:
+                pass
+
             # 指定試合の[テキスト速報]画面へ遷移
             # driver.get(getConfig("gameTextUrl").replace("[dateGameNo]", targetDate.strftime("%Y%m%d") + gameNo))
             if datetime.datetime.strptime("20210302", "%Y%m%d") <= targetDate and targetDate <= datetime.datetime.strptime("20210325", "%Y%m%d"):
@@ -186,16 +202,13 @@ try:
             with open("{0}/{1}.json".format(fullPathDate, gameNo), 'w') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             
-            print("----- [done] "\
-                "date: {0}, "
-                "gameNo: {1}, "\
-                "{2:3.1f}[sec]"\
-                " -----".format(
-                    pathDate,
-                    gameNo,
-                    time.time() - startTime
-                )
-            )
+            print("----- [done] date: {0}, gameNo: {1}, {2} vs {3}, {4:3.1f}[sec] -----".format(
+                targetDate.strftime("%m/%d"),
+                gameNo,
+                away,
+                home,
+                time.time() - startTime
+            ))
 
         targetDate = targetDate + datetime.timedelta(days=1)
 

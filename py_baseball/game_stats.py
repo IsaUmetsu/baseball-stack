@@ -145,7 +145,7 @@ try:
                 gameState = gameState.strip()
                 isFinished = gameState in ["試合終了", "試合中止", "ノーゲーム"]
             except:
-                print("----- not found game gameNo: {0}, page: {1} -----".format(gameNo, gameNoStr))
+                print("----- date: {0}, not found game gameNo: {1}, page: {2} -----".format(targetDate.strftime("%m/%d"), gameNo, gameNoStr))
                 continue
 
             # 指定試合の[出場成績]画面へ遷移
@@ -176,7 +176,7 @@ try:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             
             print("----- [done][pitch] date: {0}, gameNo: {1}, {2} vs {3}, {4:3.1f}[sec] -----".format(
-                    dateStr, gameNo, awayTeam, homeTeam, time.time() - startTime))
+                    targetDate.strftime("%m/%d"), gameNo, awayTeam, homeTeam, time.time() - startTime))
 
             ### bat
             startTime = time.time()
@@ -198,7 +198,7 @@ try:
             with open("{0}/{1}.json".format(fullPathDate, gameNo), 'w') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             print("----- [done]  [bat] date: {0}, gameNo: {1}, {2} vs {3}, {4:3.1f}[sec] -----".format(
-                    dateStr, gameNo, awayTeam, homeTeam, time.time() - startTime))
+                    targetDate.strftime("%m/%d"), gameNo, awayTeam, homeTeam, time.time() - startTime))
 
             ### text
             startTime = time.time()
@@ -240,7 +240,7 @@ try:
             with open("{0}/{1}.json".format(fullPathDate, gameNo), 'w') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             print("----- [done] [text] date: {0}, gameNo: {1}, {2} vs {3}, {4:3.1f}[sec] -----".format(
-                    dateStr, gameNo, awayTeam, homeTeam, time.time() - startTime))
+                    targetDate.strftime("%m/%d"), gameNo, awayTeam, homeTeam, time.time() - startTime))
 
         targetDate = targetDate + datetime.timedelta(days=1)
 

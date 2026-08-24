@@ -116,7 +116,7 @@ try:
                     with open("{0}/{1}.json".format(fullPathDate, gameNo), 'w') as f:
                         json.dump(data, f, indent=2, ensure_ascii=False)
                     
-                    print("----- [done] date: {0}, gameNo: {1}, {2} vs {3} -----".format(pathDate, gameNo, away, home))
+                    print("----- [done] date: {0}, gameNo: {1}, {2} vs {3} -----".format(targetDate.strftime("%m/%d"), gameNo, away, home))
                 except NoSuchElementException as e:
                     # 試合開始後
                     util = Util(driver.find_element_by_css_selector("#strt_mem"))
@@ -130,7 +130,7 @@ try:
                     # save as json
                     with open("{0}/{1}.json".format(fullPathDate, gameNo), 'w') as f:
                         json.dump(data, f, indent=2, ensure_ascii=False)
-                    print("----- [done] date: {0}, gameNo: {1}, {2} vs {3} -----".format(pathDate, gameNo, away, home))
+                    print("----- [done] date: {0}, gameNo: {1}, {2} vs {3} -----".format(targetDate.strftime("%m/%d"), gameNo, away, home))
 
             except NoSuchElementException as e:
                 gameTitleSpanArray = []
@@ -141,7 +141,7 @@ try:
                     # gameTitleSpanArray = gameTitleSpan.split(" ")# to 2022
                     gameTitleSpanArray = gameTitleSpan.split(" vs. ")# from 2023
                 except Exception as e:
-                    print("----- not found game, because pending, gameNo: {0}, page: {1} -----".format(gameNo, gameNoStr))
+                    print("----- date: {0}, not found game, because pending, gameNo: {1}, page: {2} -----".format(targetDate.strftime("%m/%d"), gameNo, gameNoStr))
                     print(e)
                     continue
 
@@ -152,7 +152,7 @@ try:
                 # save as json
                 with open("{0}/{1}.json".format(fullPathDate, gameNo), 'w') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                print("----- [pending game] date: {0}, gameNo: {1}, {2} vs {3} -----".format(pathDate, gameNo, away, home))
+                print("----- [pending game] date: {0}, gameNo: {1}, {2} vs {3} -----".format(targetDate.strftime("%m/%d"), gameNo, away, home))
 
         targetDate = targetDate + datetime.timedelta(days=1)
 

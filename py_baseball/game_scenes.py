@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from selector import getSelector
-from config import getConfig, getLeague2021, isTokyoOlympicsPeriod
+from config import getConfig, getLeague2021, isTokyoOlympicsPeriod, getTeamInitial
 from driver import getChromeDriver, getFirefoxDriver
 from util import Util
 from common import getGameNos, commonWait
@@ -117,13 +117,21 @@ try:
             try:
                 contentMain = driver.find_element_by_css_selector("#contentMain")
             except:
-                print("----- not found game gameNo: {0}, page: {1} -----".format(gameNo, gameNoStr))
+                print("----- date: {0}, not found game gameNo: {1}, page: {2} -----".format(targetDate.strftime("%m/%d"), gameNo, gameNoStr))
                 continue
 
             # ユーティリティ再定義 (対象セレクタを限定させる (driver → contentMain))
             util = Util(contentMain)
             teamInitialAway = util.getText("teamInitialAway")
             teamInitialHome = util.getText("teamInitialHome")
+            try:
+                away_initial = getTeamInitial(teamInitialAway)
+            except:
+                away_initial = teamInitialAway
+            try:
+                home_initial = getTeamInitial(teamInitialHome)
+            except:
+                home_initial = teamInitialHome
             # ソフトバンク戦以外は一旦除外 (23/9/23追記)
             # if teamInitialAway != 'ソ' and teamInitialHome != 'ソ':
             # # ソフトバンク戦は一旦除外 (23/9/24追記)
@@ -132,7 +140,7 @@ try:
             #     continue
             # 一球速報 初期遷移時のイニング
             currentInningTopBtm = util.getText("inning")
-            print("----- game: {0}, currentInningTopBtm: {1} -----".format(gameNo, currentInningTopBtm))
+            print("----- date: {0}, game: {1}, {2} vs {3}, currentInningTopBtm: {4} -----".format(targetDate.strftime("%m/%d"), gameNo, away_initial, home_initial, currentInningTopBtm))
 
             # 取得対象(開始) 初期値設定
             fromInning = 1
@@ -174,7 +182,15 @@ try:
 
                 if fileCount > 0:
                     savedLatestInningTopBtm = loadedJson.get("liveHeader", {}).get("inning", "")
-                    print("----- game: {0}, savedLatestInningTopBtm: {1}, fileCount: {2} -----".format(gameNo, savedLatestInningTopBtm, fileCount))
+                    try:
+                        away_initial = getTeamInitial(teamInitialAway)
+                    except:
+                        away_initial = teamInitialAway
+                    try:
+                        home_initial = getTeamInitial(teamInitialHome)
+                    except:
+                        home_initial = teamInitialHome
+                    print("----- date: {0}, game: {1}, {2} vs {3}, savedLatestInningTopBtm: {4}, fileCount: {5} -----".format(targetDate.strftime("%m/%d"), gameNo, away_initial, home_initial, savedLatestInningTopBtm, fileCount))
 
                     # 1. 保存完了状態（スキップ対象）の判定
                     if savedLatestInningTopBtm in ["試合終了", "試合中止", "ノーゲーム"]:
@@ -572,9 +588,11 @@ try:
                     with open("{0}/{1}.json".format(fullGamePath, scene), 'w') as f:
                         json.dump(data, f, indent=2, ensure_ascii=False)
 
-                    print("----- [done] date: {0}, gameNo: {1}, scene: {2:3d}, inning: {3}, {4}アウト, {5:3.1f}[sec] -----".format(
-                        dateStr,
+                    print("----- [done] date: {0}, gameNo: {1}, {2} vs {3}, scene: {4:3d}, inning: {5}, {6}アウト, {7:3.1f}[sec] -----".format(
+                        targetDate.strftime("%m/%d"),
                         gameNo,
+                        away_initial,
+                        home_initial,
                         scene,
                         data["liveHeader"]["inning"],
                         data["liveHeader"]["count"]["o"],
@@ -595,9 +613,11 @@ try:
 
             except TimeoutException as te:
                 print(te)
-                print("----- [error] date: {0}, gameNo: {1}, scene: {2:3d}, inning: {3}, {4}アウト, {5:3.1f}[sec] -----".format(
-                    dateStr,
+                print("----- [error] date: {0}, gameNo: {1}, {2} vs {3}, scene: {4:3d}, inning: {5}, {6}アウト, {7:3.1f}[sec] -----".format(
+                    targetDate.strftime("%m/%d"),
                     gameNo,
+                    away_initial,
+                    home_initial,
                     scene,
                     data["liveHeader"]["inning"],
                     data["liveHeader"]["count"]["o"],
