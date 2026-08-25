@@ -9,6 +9,9 @@ import argparse
 
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from selector import getSelector
 from config import getConfig, getTeamInitial, getTeamInitialByFullName, isTokyoOlympicsPeriod
@@ -201,6 +204,11 @@ try:
                     targetDate.strftime("%m/%d"), gameNo, awayTeam, homeTeam, time.time() - startTime))
 
             ### text
+            if gameState in ["試合中止", "ノーゲーム", "試合前"]:
+                print("----- [skip] [text] date: {0}, gameNo: {1}, {2} vs {3}, game state: {4} -----".format(
+                    targetDate.strftime("%m/%d"), gameNo, awayTeam, homeTeam, gameState))
+                continue
+
             startTime = time.time()
             # 日付ディレクトリ作成
             fullPathDate = "/".join([getConfig("pathTextStats"), dateStr])
@@ -210,8 +218,24 @@ try:
             textUrl = getConfig("gameTextUrl").replace("npb", "npb_practice") if isTokyoOlympicsPeriod(targetDate) else getConfig("gameTextUrl")
             driver.get(textUrl.replace("[dateGameNo]", dateGameNo))
             commonWait()
-            # 範囲限定
-            contentMain = driver.find_element_by_css_selector("#text_live")
+            # 範囲限定 (リトライ機構導入)
+            contentMain = None
+            try:
+                for attempt in range(3):
+                    try:
+                        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#text_live")))
+                        contentMain = driver.find_element_by_css_selector("#text_live")
+                        break
+                    except Exception as e:
+                        if attempt == 2:
+                            raise e
+                        print("Retrying to locate #text_live... attempt: {0}".format(attempt + 1))
+                        driver.refresh()
+                        commonWait()
+            except Exception:
+                print("----- [error] date: {0}, gameNo: {1}, {2} vs {3}, #text_live not found. Skipping text stats. -----".format(
+                    targetDate.strftime("%m/%d"), gameNo, awayTeam, homeTeam))
+                continue
             util = Util(contentMain)
 
             data = []
