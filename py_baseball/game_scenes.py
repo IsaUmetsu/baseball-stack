@@ -222,6 +222,16 @@ try:
             selectorInning = getInningSelector(fromInning, fromTopBtm)
             elem_inning = contentMain.find_element_by_css_selector(selectorInning)
             safe_click(elem_inning)
+
+            # ページ遷移完了（イニング表示の更新）を待機
+            expected_inning = f"{fromInning}回{fromTopBtm}"
+            try:
+                WebDriverWait(driver, 10).until(
+                    lambda d: d.find_element_by_css_selector(getSelector("inning")).text.strip() == expected_inning
+                )
+            except Exception as e:
+                print(f"Warning: timeout waiting for inning to become {expected_inning}: {e}")
+
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
 
             contentMain = driver.find_element_by_css_selector("#contentMain")
@@ -318,8 +328,17 @@ try:
                     startTime = time.time()
 
                     # ------------ ライブヘッダ ------------
+                    inning_text = util.getText("inning")
+                    if inning_text == "試合終了":
+                        # 「試合終了」のままの場合は、ページ更新を待つためにリトライする
+                        for _ in range(10):
+                            time.sleep(0.5)
+                            inning_text = util.getText("inning")
+                            if inning_text != "試合終了":
+                                break
+
                     data["liveHeader"] = {
-                        "inning": util.getText("inning"),
+                        "inning": inning_text,
                         "away": {
                             "teamInitial": teamInitialAway,
                             "currentScore": util.getText("currentScoreAway")
@@ -602,7 +621,12 @@ try:
                     #「次へ」ボタン押下
                     selectorNextButton = "#replay .next a"
                     try:
-                        elem_next = contentMain.find_element_by_css_selector(selectorNextButton)
+                        try:
+                            elem_next = contentMain.find_element_by_css_selector(selectorNextButton)
+                        except StaleElementReferenceException:
+                            contentMain = driver.find_element_by_css_selector("#contentMain")
+                            util = Util(contentMain)
+                            elem_next = contentMain.find_element_by_css_selector(selectorNextButton)
                         safe_click(elem_next)
                         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
                         contentMain = driver.find_element_by_css_selector("#contentMain")
