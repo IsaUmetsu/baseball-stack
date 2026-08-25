@@ -222,7 +222,7 @@ try:
             selectorInning = getInningSelector(fromInning, fromTopBtm)
             elem_inning = contentMain.find_element_by_css_selector(selectorInning)
             safe_click(elem_inning)
-            time.sleep(1)
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
 
             contentMain = driver.find_element_by_css_selector("#contentMain")
             util = Util(contentMain)
@@ -259,7 +259,7 @@ try:
                 
                 if start_element:
                     safe_click(start_element)
-                    time.sleep(1)
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
                     contentMain = driver.find_element_by_css_selector("#contentMain")
                     util = Util(contentMain)
 
