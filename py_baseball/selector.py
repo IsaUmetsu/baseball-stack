@@ -93,7 +93,7 @@ selectorList = {
     "homeTeamElemId": "#gm_memh",
     "awayTeamElemId": "#gm_mema",
     # チーム情報
-    "teamName": ".bb-head03__title",
+    "teamName": ".bb-head02__title",
     "teamOrder": "table:nth-child(2) tbody tr",
     "teamBattery": "table:nth-child(4) tbody:nth-child(1) tr:nth-child(2) td",
     "teamHomerun": "table:nth-child(4) tbody:nth-child(2) tr:nth-child(2) td",
