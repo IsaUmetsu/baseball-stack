@@ -8,8 +8,9 @@ import { findSavedTweeted, genTweetedDay, saveTweeted, tweetMulti, MSG_S, MSG_F,
 import { BatterResult } from '../type/jsonType';
 import { isFinishedGame, isFinishedGameByLeague, isLeftMoundStarterAllGame, isLeftMoundStarterByTeam, isFinishedAllGame, isFinishedInningPitchStarterByTeam } from './db';
 import { getQueryBatRc5Team, getQueryDayBatTeam, getQueryPitch10Team, getQueryBatChamp, getQueryMonthTeamEra, getQueryMonthBatTeam, getQueryBatRc5All, getQueryStarterOtherInfo, getQueryWeekBatTeam, getQueryWeekTeamEra, getQueryStand, getQueryResultTue, getQueryStandTue, getQueryPitchCourse, getQueryBatRc5Npb, getQueryPitch10TeamNpb, getQueryBatChampNpb, getQueryDayTeamEra, getQueryDayLob, getQueryBatRc5TeamJs, getQueryResultBatPerPitch, getQueryResultPitchPerBat } from './query';
-import { getPitcher } from './fs';
+import { getPitcher, BASEBALL_DATA_DIR } from './fs';
 import { getYear } from '../util/day';
+import * as path from 'path';
 const YEAR = getYear();
 
 /**
@@ -1539,8 +1540,8 @@ const execBatTeam = async (isTweet = true, leagueArg = '', getQuery: (teams: str
  * 
  */
 export const execPitchRaPerInningStart = async (isTweet = true, teamArg = '', nameArg = '') => {
-  const pitcherPath = "/Users/IsamuUmetsu/dev/py_baseball/starter/%s";
-  const jsonPath = "/Users/IsamuUmetsu/dev/py_baseball/starter/%s/%s.json";
+  const pitcherPath = path.join(BASEBALL_DATA_DIR, "starter", "%s");
+  const jsonPath = path.join(BASEBALL_DATA_DIR, "starter", "%s", "%s.json");
 
   let targetPitchers = [];
 

@@ -43,6 +43,12 @@ export class StatsScoreboard extends BaseEntity {
   @Column("varchar", { name: "ing10", nullable: true, length: 3 })
   ing10: string | null;
 
+  @Column("varchar", { name: "ing11", nullable: true, length: 3 })
+  ing11: string | null;
+
+  @Column("varchar", { name: "ing12", nullable: true, length: 3 })
+  ing12: string | null;
+
   @Column("varchar", { name: "total", nullable: true, length: 3 })
   total: string | null;
 

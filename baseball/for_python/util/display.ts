@@ -2,9 +2,10 @@ import { format } from 'util';
 import * as moment from 'moment';
 import * as yargs from 'yargs';
 import { batOuts, dayOfWeekArr, FORMAT_BATTER, FORMAT_BATTER_HR, FORMAT_BATTER_RBI, leagueList, posArgDic, strikeTypes, teamArray, teamList, pitcherRoles, pitchTypes, teamNames, FORMAT_BATTER_TEAM, FORMAT_BATTER_ONBASE, FORMAT_BATTER_BB, FORMAT_BATTER_HBP, FORMAT_BATTER_HIT, sortType, FORMAT_BATTER_OPS, rankCircle } from '../constant';
-import { countFiles, getJson } from './fs';
+import { countFiles, getJson, BASEBALL_DATA_DIR } from './fs';
 import { BatterResult } from '../type/jsonType';
 import { getYear } from '../util/day';
+import * as path from "path";
 const YEAR = getYear();
 
 function isTweetValid(text: string): boolean {
@@ -342,8 +343,8 @@ export const checkArgDaySeasonEndSpecify = (day = '', seasonEnd = '', specify = 
  */
 export const checkArgTmOp = async (teamArg = '', oppoArg = '', dayArg = '') => {
 
-  const cardsPath = "/Users/IsamuUmetsu/dev/py_baseball/starter/%s";
-  const cardsJsonPath = "/Users/IsamuUmetsu/dev/py_baseball/starter/%s/%s.json";
+  const cardsPath = path.join(BASEBALL_DATA_DIR, "starter", "%s");
+  const cardsJsonPath = path.join(BASEBALL_DATA_DIR, "starter", "%s", "%s.json");
 
   const targetTeam = [];
 

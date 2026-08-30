@@ -3,7 +3,7 @@ import { format } from 'util';
 
 import { OutputJson, TeamInfoJson } from './type/jsonType.d';
 import { insertGameInfo, insertLiveHeader, insertLiveBody, insertPitchInfo, insertAwayTeamInfo, insertHomeTeamInfo, executeUpdatePlusOutCount } from './util/db';
-import { checkGameDir, getJson, countFiles, checkDateDir } from './util/fs';
+import { checkGameDir, getJson, countFiles, checkDateDir, BASEBALL_DATA_DIR } from './util/fs';
 import { checkArgDaySeasonEndSpecify, checkArgI } from "./util/display";
 import { savePitchData, saveBatAndScoreData, saveText } from "./util/process";
 import { teamArray as teams, TOP } from "./constant";
@@ -19,27 +19,6 @@ const startSceneCnt = 1;
 // const { D, SE, S } = process.env;
 // let { targetDay, seasonEndArg, specifyArg } = checkArgDaySeasonEndSpecify(D, SE, S);
 // const { YEAR, seasonStart, seasonEnd } = getDayInfo(targetDay, seasonEndArg);
-
-function resolveBaseballDataDir(): string {
-  // ① env があれば最優先
-  if (process.env.BASEBALL_DATA_DIR) {
-    return process.env.BASEBALL_DATA_DIR;
-  }
-
-  // ② ローカル実行用の自動推測
-  // baseball 配下から実行されている前提
-  const candidate = path.resolve(process.cwd(), "..", "py_baseball");
-
-  if (fs.existsSync(candidate)) {
-    return candidate;
-  }
-
-  // ③ それでも無理なら即失敗
-  throw new Error(
-    "BASEBALL_DATA_DIR is not set and py_baseball directory was not found"
-  );
-}
-const BASEBALL_DATA_DIR = resolveBaseballDataDir();
 
 const BASE_DIR = BASEBALL_DATA_DIR ?? "/app/py_baseball";
 

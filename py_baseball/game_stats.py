@@ -71,6 +71,10 @@ def createBatStatsDetail(cols):
         params = ["position", "name", "ave", "ab", "run", "hit", "rbi", "so", "bb", "hbp", "sh", "sb", "e", "hr", "ing1", "ing2", "ing3", "ing4", "ing5", "ing6", "ing7", "ing8", "ing9"]
     if len(cols) > 23:
         params.append("ing10")
+        if len(cols) > 24:
+            params.append("ing11")
+            if len(cols) > 25:
+                params.append("ing12")
 
     for idx, param in enumerate(params):
         statsTupleList.append((param, cols[idx].text))
@@ -89,6 +93,10 @@ def createScoreBoard(scoreBoardElems):
     params = ["total", "ing1", "ing2", "ing3", "ing4", "ing5", "ing6", "ing7", "ing8", "ing9"]
     if len(scoreBoardElems) > 10:
         params.append("ing10")
+        if len(scoreBoardElems) > 11:
+            params.append("ing11")
+            if len(scoreBoardElems) > 12:
+                params.append("ing12")
 
     for idx, param in enumerate(params):
         scoreBoardTupleList.append((param, scoreBoardElems[idx].text))

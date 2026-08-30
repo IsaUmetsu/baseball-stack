@@ -201,7 +201,9 @@ export interface BatStats {
     ing7?: string,
     ing8?: string,
     ing9?: string,
-    ing10?: string
+    ing10?: string,
+    ing11?: string,
+    ing12?: string
 }
 
 export interface ScoreBoard {
@@ -215,7 +217,9 @@ export interface ScoreBoard {
     ing7?: string,
     ing8?: string,
     ing9?: string,
-    ing10?: string
+    ing10?: string,
+    ing11?: string,
+    ing12?: string
 }
 
 export interface BatterResult {

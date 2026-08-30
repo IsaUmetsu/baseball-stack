@@ -1,9 +1,10 @@
 import { format } from 'util';
 
 import { OutputJson } from './type/jsonType';
-import { checkGameDir, getJson, countFiles, checkDateDir } from './util/fs';
+import { checkGameDir, getJson, countFiles, checkDateDir, BASEBALL_DATA_DIR } from './util/fs';
 import { checkArgDaySeasonEndSpecify } from "./util/display";
 import { getDayInfo } from "./util/day";
+import * as path from 'path';
 
 const startGameNo = 1;
 const endGameNo = 6;
@@ -13,9 +14,9 @@ const { D, SE, S } = process.env;
 let { targetDay, seasonEndArg, specifyArg } = checkArgDaySeasonEndSpecify(D, SE, S);
 const { day, seasonStart, seasonEnd } = getDayInfo(targetDay, seasonEndArg);
 
-const datePath = "/Users/IsamuUmetsu/dev/py_baseball/output";
-const gamePath = "/Users/IsamuUmetsu/dev/py_baseball/output/%s/%s";
-const jsonPath = "/Users/IsamuUmetsu/dev/py_baseball/output/%s/%s/%s.json";
+const datePath = path.join(BASEBALL_DATA_DIR, "output");
+const gamePath = path.join(BASEBALL_DATA_DIR, "output", "%s", "%s");
+const jsonPath = path.join(BASEBALL_DATA_DIR, "output", "%s", "%s", "%s.json");
 
 /**
  * 1シーンごとの試合データ取得、jsonファイル保存

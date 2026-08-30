@@ -1,6 +1,27 @@
 import * as fs from "fs";
 import * as moment from "moment";
 import { format } from "util";
+import * as path from "path";
+
+/**
+ * 
+ */
+export function resolveBaseballDataDir(): string {
+  if (process.env.BASEBALL_DATA_DIR) {
+    return process.env.BASEBALL_DATA_DIR;
+  }
+  const candidateParent = path.resolve(process.cwd(), "..", "py_baseball");
+  if (fs.existsSync(candidateParent)) {
+    return candidateParent;
+  }
+  const candidateCurrent = path.resolve(process.cwd(), "py_baseball");
+  if (fs.existsSync(candidateCurrent)) {
+    return candidateCurrent;
+  }
+  return "/app/py_baseball";
+}
+
+export const BASEBALL_DATA_DIR = resolveBaseballDataDir();
 
 /**
  * 

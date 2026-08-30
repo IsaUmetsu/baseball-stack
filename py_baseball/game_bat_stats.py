@@ -52,6 +52,10 @@ def createBatStatsDetail(cols):
 
     if len(cols) > 23:
         data["ing10"] = cols[23].text
+        if len(cols) > 24:
+            data["ing11"] = cols[24].text
+            if len(cols) > 25:
+                data["ing12"] = cols[25].text
 
     return data
 
@@ -79,6 +83,10 @@ def createScoreBoard(scoreBoardElems):
 
     if len(scoreBoardElems) > 10:
         scoreBoard["ing10"] = scoreBoardElems[10].text
+        if len(scoreBoardElems) > 11:
+            scoreBoard["ing11"] = scoreBoardElems[11].text
+            if len(scoreBoardElems) > 12:
+                scoreBoard["ing12"] = scoreBoardElems[12].text
 
     return scoreBoard
 

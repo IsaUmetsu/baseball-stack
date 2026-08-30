@@ -2,19 +2,20 @@ import * as moment from "moment";
 import { format } from 'util';
 
 import { BatStats, PitchStats, ScoreBoard, TotalPitchStats } from '../type/jsonType';
-import { getJson, checkDateDir, checkGameJson } from './fs';
+import { getJson, checkDateDir, checkGameJson, BASEBALL_DATA_DIR } from './fs';
 import { TeamPitchStats, TeamBatStats, TotalBatStats } from '../type/jsonType';
 import { teamArray, posArgDic } from '../constant';
 import { GameInfo, StatsPitcher, StatsScoreboard, StatsBatter, SummaryPoint } from "../entities";
 import { isFinishedGameById } from './db';
 import { AppDataSource } from "./datasource";
+import * as path from "path";
 
 const YEAR = process.env.YEAR ?? moment().format("YYYY");
 const startGameNo = 1;
 const endGameNo = 6;
 
-const pitchDatePath = "/Users/IsamuUmetsu/dev/py_baseball/pitcherStats";
-const pitchJsonPath = "/Users/IsamuUmetsu/dev/py_baseball/pitcherStats/%s/%s.json";
+const pitchDatePath = path.join(BASEBALL_DATA_DIR, "pitcherStats");
+const pitchJsonPath = path.join(BASEBALL_DATA_DIR, "pitcherStats", "%s", "%s.json");
 
 // -------------------- Pitcher Stats --------------------
 
@@ -130,8 +131,8 @@ export const savePitchData = async (
 // -------------------- /Pitcher Stats --------------------
 
 // -------------------- Batter Stats And ScoreBoard --------------------
-const batDatePath = "/Users/IsamuUmetsu/dev/py_baseball/batterStats";
-const batJsonPath = "/Users/IsamuUmetsu/dev/py_baseball/batterStats/%s/%s.json";
+const batDatePath = path.join(BASEBALL_DATA_DIR, "batterStats");
+const batJsonPath = path.join(BASEBALL_DATA_DIR, "batterStats", "%s", "%s.json");
 
 /**
  * 
@@ -177,7 +178,7 @@ const doCheckBat = async (gameNo, dateStr) => {
     const doSaveStatsBatter = async (statsBatter: StatsBatter, batStats: BatStats) => {
       const {
         position, name, ave, ab, run, hit, rbi, so, bb, hbp, sh, sb, e, hr,
-        ing1, ing2, ing3, ing4, ing5, ing6, ing7, ing8, ing9, ing10
+        ing1, ing2, ing3, ing4, ing5, ing6, ing7, ing8, ing9, ing10, ing11, ing12
       } = batStats;
 
       statsBatter.gameInfoId = gameInfoId;
@@ -208,6 +209,8 @@ const doCheckBat = async (gameNo, dateStr) => {
       statsBatter.ing8 = ing8;
       statsBatter.ing9 = ing9;
       statsBatter.ing10 = ing10 ? ing10 : '';
+      statsBatter.ing11 = ing11 ? ing11 : '';
+      statsBatter.ing12 = ing12 ? ing12 : '';
 
       statsBatter.isSm = Number(isStartingMember(position));
       statsBatter.isPh = Number(position.indexOf('打') > -1);
@@ -221,7 +224,7 @@ const doCheckBat = async (gameNo, dateStr) => {
      * 
      */
     const doSaveScoreBoard = async (statsScoreBoard: StatsScoreboard, scoreBoard: ScoreBoard) => {
-      const { total, ing1, ing2, ing3, ing4, ing5, ing6, ing7, ing8, ing9, ing10 } = scoreBoard;
+      const { total, ing1, ing2, ing3, ing4, ing5, ing6, ing7, ing8, ing9, ing10, ing11, ing12 } = scoreBoard;
 
       statsScoreBoard.gameInfoId = gameInfoId;
       statsScoreBoard.bTeam = bTeam;
@@ -235,6 +238,8 @@ const doCheckBat = async (gameNo, dateStr) => {
       statsScoreBoard.ing8 = ing8;
       statsScoreBoard.ing9 = ing9;
       statsScoreBoard.ing10 = ing10 ? ing10 : '';
+      statsScoreBoard.ing11 = ing11 ? ing11 : '';
+      statsScoreBoard.ing12 = ing12 ? ing12 : '';
       statsScoreBoard.total = total;
 
       await statsScoreBoard.save();
@@ -300,8 +305,8 @@ export const saveBatAndScoreData = async (
 // -------------------- /Batter Stats And ScoreBoard --------------------
 
 // -------------------- Text --------------------
-const textDatePath = "/Users/IsamuUmetsu/dev/py_baseball/text";
-const textJsonPath = "/Users/IsamuUmetsu/dev/py_baseball/text/%s/%s.json";
+const textDatePath = path.join(BASEBALL_DATA_DIR, "text");
+const textJsonPath = path.join(BASEBALL_DATA_DIR, "text", "%s", "%s.json");
 
 interface ResultText {
   inning: string,
