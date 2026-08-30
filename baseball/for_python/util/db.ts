@@ -28,18 +28,18 @@ export const insertGameInfo = async (
     gameInfo.homeTeamInitial = homeTeamInitial;
     gameInfo.gameNo = gameNo;
     gameInfo.noGame = Number(isNoGame);
-    gameInfo.isOp = isDuringPeriodYear('02-22', '03-27');
-    gameInfo.isRg = isDuringPeriodYear('03-28', '07-22') || isDuringPeriodYear('07-26', '10-10');
-    gameInfo.isIl = isDuringPeriodYear('06-03', '06-26');
+    gameInfo.isOp = isDuringPeriodYear('02-22', '03-26');
+    gameInfo.isRg = isDuringPeriodYear('03-27', '07-27') || isDuringPeriodYear('07-30', '10-10');
+    gameInfo.isIl = isDuringPeriodYear('05-25', '06-17');
     gameInfo.isCs = isDuringPeriodYear('10-11', '10-24');
     gameInfo.isJs = isDuringPeriodYear('10-25', '11-03');
     await gameInfo.save();
     return gameInfo.id;
   } else {
     savedGameInfo.noGame = Number(isNoGame);
-    savedGameInfo.isOp = isDuringPeriod('02-22', '03-27');
-    savedGameInfo.isRg = isDuringPeriod('03-28', '07-22') || isDuringPeriod('07-26', '10-10');
-    savedGameInfo.isIl = isDuringPeriod('06-03', '06-26');
+    savedGameInfo.isOp = isDuringPeriod('02-22', '03-26');
+    savedGameInfo.isRg = isDuringPeriod('03-27', '07-27') || isDuringPeriod('07-30', '10-10');
+    savedGameInfo.isIl = isDuringPeriod('05-25', '06-17');
     savedGameInfo.isCs = isDuringPeriod('10-11', '10-24');
     savedGameInfo.isJs = isDuringPeriod('10-25', '11-03');
     await savedGameInfo.save();
