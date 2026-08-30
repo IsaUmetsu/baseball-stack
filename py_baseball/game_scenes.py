@@ -317,6 +317,26 @@ try:
             # 処理開始シーン定義
             scene = fileCount
             
+            def get_scene_signature(u):
+                try:
+                    pitch_details_text = ""
+                    try:
+                        pitchDetailsElem = u.getElems("pitchDetail")
+                        pitch_details_text = "|".join([elem.text for elem in pitchDetailsElem])
+                    except Exception:
+                        pass
+                    return (
+                        u.getText("inning"),
+                        u.getText("inningBatterCnt"),
+                        u.getText("currentBatterName"),
+                        u.getText("currentPitchCount"),
+                        u.getText("battingResult"),
+                        u.getText("pitchingResult"),
+                        pitch_details_text
+                    )
+                except Exception:
+                    return None
+
             cached_inning = None
             cached_home_team_info = None
             cached_away_team_info = None
@@ -619,6 +639,7 @@ try:
                     ))
 
                     #「次へ」ボタン押下
+                    prev_sig = get_scene_signature(util)
                     selectorNextButton = "#replay .next a"
                     try:
                         try:
@@ -628,6 +649,19 @@ try:
                             util = Util(contentMain)
                             elem_next = contentMain.find_element_by_css_selector(selectorNextButton)
                         safe_click(elem_next)
+                        
+                        # シグネチャが切り替わるまで待機
+                        start_wait = time.time()
+                        while time.time() - start_wait < 5.0:
+                            time.sleep(0.1)
+                            try:
+                                contentMain = driver.find_element_by_css_selector("#contentMain")
+                                util = Util(contentMain)
+                                if get_scene_signature(util) != prev_sig:
+                                    break
+                            except Exception:
+                                pass
+
                         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
                         contentMain = driver.find_element_by_css_selector("#contentMain")
                         util = Util(contentMain)
