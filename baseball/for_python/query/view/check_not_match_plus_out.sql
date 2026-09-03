@@ -37,7 +37,7 @@ CREATE VIEW `check_not_match_plus_out` AS
                 `debug_base`.`after_count_out` AS `after_count_out`,
                 `debug_base`.`eol` AS `eol`
         FROM
-            `baseball_2025`.`debug_base`)) `L`
+            `debug_base`)) `L`
         LEFT JOIN (SELECT 
             `debug_base`.`g_id` AS `g_id`,
                 `debug_base`.`date` AS `date`,
@@ -55,7 +55,7 @@ CREATE VIEW `check_not_match_plus_out` AS
                 `debug_base`.`after_count_out` AS `after_count_out`,
                 `debug_base`.`eol` AS `eol`
         FROM
-            `baseball_2025`.`debug_base`) `R` ON (((`L`.`g_id` = `R`.`g_id`)
+            `debug_base`) `R` ON (((`L`.`g_id` = `R`.`g_id`)
             AND (`L`.`lb_id` = (`R`.`lb_id` + 1))
             AND (`L`.`inning` = `R`.`inning`))))
     WHERE

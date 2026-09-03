@@ -201,9 +201,9 @@ SELECT
             ss_b.b_team
     END AS team
 FROM
-    baseball_2020.stats_scoreboard ss_t
+    stats_scoreboard ss_t
         LEFT JOIN
-    baseball_2020.stats_scoreboard ss_b ON ss_t.game_info_id = ss_b.game_info_id
+    stats_scoreboard ss_b ON ss_t.game_info_id = ss_b.game_info_id
         AND ss_t.id = ss_b.id - 1
         left join game_info gi on gi.id = ss_t.game_info_id
 WHERE
