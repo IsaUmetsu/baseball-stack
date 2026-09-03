@@ -670,7 +670,15 @@ CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug
 --
 
 DROP VIEW IF EXISTS `debug_month_result`;
-CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug_month_result` AS select 1 AS `t_team`,1 AS `t_total`,1 AS `b_team`,1 AS `b_total`,1 AS `win_team`,1 AS `lose_team`,1 AS `draw_team_1`,1 AS `draw_team_2`,1 AS `date`,1 AS `game_info_id`,1 AS `month`,1 AS `eol`;
+CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug_month_result`
+AS SELECT
+   `ss1`.`b_team` AS `t_team`,
+   `ss1`.`total` AS `t_total`,
+   `ss2`.`b_team` AS `b_team`,
+   `ss2`.`total` AS `b_total`,(case when (cast(`ss1`.`total` as signed) > cast(`ss2`.`total` as signed)) then `ss1`.`b_team` when (cast(`ss1`.`total` as signed) < cast(`ss2`.`total` as signed)) then `ss2`.`b_team` else NULL end) AS `win_team`,(case when (cast(`ss1`.`total` as signed) < cast(`ss2`.`total` as signed)) then `ss1`.`b_team` when (cast(`ss1`.`total` as signed) > cast(`ss2`.`total` as signed)) then `ss2`.`b_team` else NULL end) AS `lose_team`,(case when (`ss1`.`total` = `ss2`.`total`) then `ss1`.`b_team` end) AS `draw_team_1`,(case when (`ss1`.`total` = `ss2`.`total`) then `ss2`.`b_team` end) AS `draw_team_2`,
+   `gi`.`date` AS `date`,
+   `gi`.`id` AS `game_info_id`,cast(date_format(str_to_date(`gi`.`date`,'%Y%m%d'),'%c') as signed) AS `month`,'' AS `eol`
+FROM ((`stats_scoreboard` `ss1` left join `stats_scoreboard` `ss2` on(((`ss1`.`game_info_id` = `ss2`.`game_info_id`) and ((`ss1`.`id` + 1) = `ss2`.`id`)))) left join `game_info` `gi` on((`ss1`.`game_info_id` = `gi`.`id`))) where ((`ss2`.`id` is not null) and (`gi`.`no_game` = 0));
 
 --
 -- View structure for view `debug_pitch_base`
