@@ -40,6 +40,25 @@ interface Row {
   is_ab: number | null;
 }
 
+interface BattingStatsRow {
+  batter: string;
+  all_bat: number;
+  pa: number;
+  b_team: string;
+  bat: number;
+  hit: number;
+  onbase: number;
+  total_base: number;
+  average: number;
+  average_onbase: number;
+  average_slugging: number;
+  ops: number;
+  hr: number;
+  rbi: number;
+  bb: number;
+  hbp: number;
+}
+
 const TEAMS = ["ヤ", "De", "神", "巨", "広", "中", "オ", "ロ", "ソ", "楽", "日", "西"];
 
 // 日付のフォーマット関数 (YYYYMMDD -> YYYY-MM-DD)
@@ -50,9 +69,170 @@ function formatDate(dateStr: string): string {
   return dateStr;
 }
 
+// 少数フォーマット用関数
+function formatDecimal(val: any, digits: number = 3): string {
+  if (val === null || val === undefined) return "-";
+  const num = Number(val);
+  if (isNaN(num)) return "-";
+  return num.toFixed(digits);
+}
+// 直近5試合の成績を動的に取得するヘルパー関数
+async function fetchTeamRecentStats(teamInitial: string, selectedDate: string) {
+  const games = await query<{ id: number }[]>(
+    `SELECT id FROM game_info 
+     WHERE (away_team_initial = ? OR home_team_initial = ?) 
+       AND no_game = 0 
+       AND date <= ? 
+     ORDER BY date DESC, game_no DESC
+     LIMIT 5`,
+    [teamInitial, teamInitial, selectedDate]
+  );
+  if (games.length === 0) {
+    return { stats: [], count: 0 };
+  }
+  const gameIds = games.map(g => g.id);
+  const placeholders = gameIds.map(() => "?").join(",");
+  const sql = `
+    SELECT 
+      base.batter AS batter,
+      base.all_bat AS all_bat,
+      base.pa AS pa,
+      base.b_team AS b_team,
+      base.bat AS bat,
+      base.hit AS hit,
+      base.onbase AS onbase,
+      base.total_base AS total_base,
+      base.average AS average,
+      base.average_onbase AS average_onbase,
+      base.average_slugging AS average_slugging,
+      (base.average_onbase + base.average_slugging) AS ops,
+      IFNULL(other.hr, 0) AS hr,
+      IFNULL(other.rbi, 0) AS rbi,
+      IFNULL(other.bb, 0) AS bb,
+      IFNULL(other.hbp, 0) AS hbp
+    FROM (
+      SELECT 
+        REPLACE(current_batter_name, ' ', '') AS batter,
+        COUNT(current_batter_name) AS all_bat,
+        SUM(is_pa) AS pa,
+        b_team,
+        SUM(is_ab) AS bat,
+        SUM(is_hit) AS hit,
+        SUM(is_onbase) AS onbase,
+        SUM(total_base) AS total_base,
+        ROUND((SUM(is_hit) / SUM(is_ab)), 3) AS average,
+        ROUND((SUM(is_onbase) / SUM(is_pa)), 3) AS average_onbase,
+        ROUND((SUM(total_base) / SUM(is_pa)), 3) AS average_slugging
+      FROM debug_base 
+      WHERE is_pa = 1 
+        AND b_team = ? 
+        AND g_id IN (${placeholders})
+      GROUP BY current_batter_name, b_team
+      HAVING pa >= (3.1 * ?)
+    ) base 
+    LEFT JOIN (
+      SELECT 
+        b_team,
+        name,
+        REPLACE(name, ' ', '') AS batter,
+        SUM(rbi) AS rbi,
+        SUM(hr) AS hr,
+        SUM(bb) AS bb,
+        SUM(hbp) AS hbp
+      FROM stats_batter 
+      WHERE b_team = ? 
+        AND game_info_id IN (${placeholders})
+      GROUP BY name, b_team
+    ) other 
+    ON base.batter = other.batter AND base.b_team = other.b_team
+    ORDER BY ops DESC, average DESC
+  `;
+  const params = [
+    teamInitial, ...gameIds, games.length,
+    teamInitial, ...gameIds
+  ];
+  const stats = await query<BattingStatsRow[]>(sql, params);
+  return { stats, count: games.length };
+}
+// 統計情報のテーブルを表示するコンポーネント（横スクロール・ヘッダー固定・選手名固定対応）
+function renderStatsTable(teamLabel: string, teamInitial: string, stats: BattingStatsRow[], count: number) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 font-medium">
+        <div className="font-bold text-slate-700 text-sm">
+          {teamLabel}: {teamInitial} 球団 (直近 {count} 試合の打撃成績)
+        </div>
+        <div className="text-xs text-slate-400">規定打席: {(count * 3.1).toFixed(1)} PA以上</div>
+      </div>
+      
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+        <table className="w-full text-left text-xs border-collapse relative">
+          <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm">
+            <tr className="border-b border-slate-100 font-bold text-slate-600 uppercase text-center">
+              <th className="p-3 text-left sticky left-0 bg-slate-50 z-20 min-w-[100px]">打者</th>
+              <th className="p-3 min-w-[60px]">打席</th>
+              <th className="p-3 min-w-[60px]">打数</th>
+              <th className="p-3 min-w-[60px]">安打</th>
+              <th className="p-3 min-w-[60px]">本塁打</th>
+              <th className="p-3 min-w-[60px]">打点</th>
+              <th className="p-3 min-w-[60px]">四球</th>
+              <th className="p-3 min-w-[60px]">死球</th>
+              <th className="p-3 min-w-[70px]">打率</th>
+              <th className="p-3 min-w-[70px]">出塁率</th>
+              <th className="p-3 min-w-[70px]">長打率</th>
+              <th className="p-3 min-w-[70px] bg-blue-50/50">OPS</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-normal">
+            {stats.length === 0 ? (
+              <tr>
+                <td colSpan={12} className="text-center p-12 text-slate-400">
+                  該当選手がいません（規定打席に達している選手がいません）
+                </td>
+              </tr>
+            ) : (
+              stats.map((s, i) => (
+                <tr key={i} className="hover:bg-blue-50/20 transition-colors text-center">
+                  <td className="p-3 text-left font-semibold text-slate-800 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                    {s.batter}
+                  </td>
+                  <td className="p-3 font-mono text-slate-600">{s.pa}</td>
+                  <td className="p-3 font-mono text-slate-600">{s.bat}</td>
+                  <td className="p-3 font-mono text-slate-600">{s.hit}</td>
+                  <td className="p-3 font-mono text-slate-600 font-semibold">{s.hr}</td>
+                  <td className="p-3 font-mono text-slate-600 font-semibold">{s.rbi}</td>
+                  <td className="p-3 font-mono text-slate-600">{s.bb}</td>
+                  <td className="p-3 font-mono text-slate-600">{s.hbp}</td>
+                  <td className="p-3 font-mono text-slate-700 font-medium">
+                    {formatDecimal(s.average)}
+                  </td>
+                  <td className="p-3 font-mono text-slate-700">
+                    {formatDecimal(s.average_onbase)}
+                  </td>
+                  <td className="p-3 font-mono text-slate-700">
+                    {formatDecimal(s.average_slugging)}
+                  </td>
+                  <td className="p-3 font-mono font-bold text-blue-600 bg-blue-50/20">
+                    {formatDecimal(s.ops)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
 export default async function Home({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const selectedDate = searchParams.date || "";
   const selectedGameId = searchParams.game_id ? Number(searchParams.game_id) : null;
+  const currentTab = searchParams.tab || "details";
   
   const search = searchParams.search || "";
   const team = searchParams.team || "";
@@ -62,6 +242,12 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
   let games: GameItem[] = [];
   let rows: Row[] = [];
   let selectedGameInfo: GameItem | null = null;
+
+  let awayRecentStats: BattingStatsRow[] = [];
+  let homeRecentStats: BattingStatsRow[] = [];
+  let awayRecentGamesCount = 0;
+  let homeRecentGamesCount = 0;
+
   let dbErr: string | null = null;
 
   try {
@@ -120,6 +306,17 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
         `SELECT * FROM debug_base ${whereClause} ORDER BY scene ASC`,
         params
       );
+
+      // タブ2: 直近5試合成績 (rc5) の動的データ取得
+      if (currentTab === "rc5" && selectedGameInfo) {
+        const awayRes = await fetchTeamRecentStats(selectedGameInfo.away_team_initial, selectedGameInfo.date);
+        awayRecentStats = awayRes.stats;
+        awayRecentGamesCount = awayRes.count;
+
+        const homeRes = await fetchTeamRecentStats(selectedGameInfo.home_team_initial, selectedGameInfo.date);
+        homeRecentStats = homeRes.stats;
+        homeRecentGamesCount = homeRes.count;
+      }
     }
   } catch (err: any) {
     dbErr = err?.message || "Unknown error";
@@ -133,6 +330,7 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
     if (search) q.set("search", search);
     if (team) q.set("team", team);
     if (result) q.set("result", result);
+    if (currentTab) q.set("tab", currentTab);
 
     Object.entries(updates).forEach(([k, v]) => {
       if (v === null) {
@@ -282,8 +480,33 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
                     </div>
                   )}
                 </div>
+                {/* タブ選択UI */}
+                <div className="flex border-b border-slate-200">
+                  <Link
+                    href={getUrl({ tab: "details" })}
+                    className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${
+                      currentTab === "details"
+                        ? "border-blue-600 text-blue-600"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    📋 試合詳細データ
+                  </Link>
+                  <Link
+                    href={getUrl({ tab: "rc5" })}
+                    className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${
+                      currentTab === "rc5"
+                        ? "border-blue-600 text-blue-600"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    📈 直近5試合成績 (RC5)
+                  </Link>
+                </div>
 
-                {/* 2. フィルタリングパネル */}
+                {currentTab === "details" ? (
+                  <>
+                    {/* 2. フィルタリングパネル */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
                   <form method="GET" className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     {/* 選択中の日付・試合IDを隠しフィールドで保持 */}
@@ -410,6 +633,13 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
                     </table>
                   </div>
                 </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {renderStatsTable("AWAY", selectedGameInfo.away_team_initial, awayRecentStats, awayRecentGamesCount)}
+                    {renderStatsTable("HOME", selectedGameInfo.home_team_initial, homeRecentStats, homeRecentGamesCount)}
+                  </div>
+                )}
                 
               </div>
             )}
