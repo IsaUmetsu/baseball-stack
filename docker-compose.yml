@@ -57,5 +57,28 @@ services:
         condition: service_healthy
     command: sh -c "pip install -r requirements.txt && tail -f /dev/null"
 
+  viewer:
+    build:
+      context: ./viewer
+      dockerfile: Dockerfile
+    container_name: baseball-viewer
+    ports:
+      - "3000:3000"
+    working_dir: /app
+    volumes:
+      - ./viewer:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
+
 volumes:
   mysql-data:
