@@ -649,7 +649,216 @@ CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug
 --
 
 DROP VIEW IF EXISTS `debug_first_game`;
-CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug_first_game` AS select 1 AS `game_info_id`,1 AS `team`;
+CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug_first_game` AS
+SELECT 
+    ss_t.game_info_id,
+    CASE
+        WHEN
+            ss_t.ing1 > 0
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 = 0
+                AND ss_t.ing8 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 = 0
+                AND ss_t.ing8 = 0
+                AND ss_b.ing8 = 0
+                AND ss_t.ing9 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 = 0
+                AND ss_t.ing8 = 0
+                AND ss_b.ing8 = 0
+                AND ss_t.ing9 = 0
+                AND ss_b.ing9 = 0
+                AND ss_t.ing10 > 0)
+        THEN
+            ss_t.b_team
+        WHEN
+            (ss_t.ing1 = 0 AND ss_b.ing1 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 = 0
+                AND ss_t.ing8 = 0
+                AND ss_b.ing8 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 = 0
+                AND ss_t.ing8 = 0
+                AND ss_b.ing8 = 0
+                AND ss_t.ing9 = 0
+                AND ss_b.ing9 > 0)
+                OR (ss_t.ing1 = 0 AND ss_b.ing1 = 0
+                AND ss_t.ing2 = 0
+                AND ss_b.ing2 = 0
+                AND ss_t.ing3 = 0
+                AND ss_b.ing3 = 0
+                AND ss_t.ing4 = 0
+                AND ss_b.ing4 = 0
+                AND ss_t.ing5 = 0
+                AND ss_b.ing5 = 0
+                AND ss_t.ing6 = 0
+                AND ss_b.ing6 = 0
+                AND ss_t.ing7 = 0
+                AND ss_b.ing7 = 0
+                AND ss_t.ing8 = 0
+                AND ss_b.ing8 = 0
+                AND ss_t.ing9 = 0
+                AND ss_b.ing9 = 0
+                AND ss_t.ing10 = 0
+                AND REPLACE(ss_b.ing10, 'X', '') > 0)
+        THEN
+            ss_b.b_team
+    END AS team
+FROM
+    stats_scoreboard ss_t
+        LEFT JOIN
+    stats_scoreboard ss_b ON ss_t.game_info_id = ss_b.game_info_id
+        AND ss_t.id = ss_b.id - 1
+        left join game_info gi on gi.id = ss_t.game_info_id
+WHERE
+    ss_b.id IS NOT NULL AND gi.is_cs = 0 and gi.is_js = 0;
 
 --
 -- View structure for view `debug_game_bat_rc5`
@@ -706,7 +915,223 @@ CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `debug
 --
 
 DROP VIEW IF EXISTS `game_cnt_per_day`;
-CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `game_cnt_per_day` AS select 1 AS `team_initial_kana`,1 AS `team_initial`,1 AS `dow`,1 AS `away_game_cnt`,1 AS `home_game_cnt`,1 AS `game_cnt`,1 AS `eol`;
+CREATE ALGORITHM=UNDEFINED DEFINER=CURRENT_USER SQL SECURITY DEFINER VIEW `game_cnt_per_day` AS
+    SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            1 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`away_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 1)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            1 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`home_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 1)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`))) 
+    UNION SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            2 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                (CASE
+                    WHEN ISNULL(COUNT(`game_info`.`away_team_initial`)) THEN 0
+                    ELSE COUNT(`game_info`.`away_team_initial`)
+                END) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 2)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            2 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                (CASE
+                    WHEN ISNULL(COUNT(`game_info`.`home_team_initial`)) THEN 0
+                    ELSE COUNT(`game_info`.`home_team_initial`)
+                END) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 2)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`))) 
+    UNION SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            3 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`away_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 3)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            3 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`home_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 3)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`))) 
+    UNION SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            4 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`away_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 4)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            4 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`home_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 4)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`))) 
+    UNION SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            5 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`away_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 5)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            5 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`home_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 5)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`))) 
+    UNION SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            6 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`away_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 6)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            6 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`home_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 6)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`))) 
+    UNION SELECT 
+        `tm`.`team_initial_kana` AS `team_initial_kana`,
+        `tm`.`team_initial` AS `team_initial`,
+        `away`.`dow` AS `dow`,
+        `away`.`game_cnt` AS `away_game_cnt`,
+        `home`.`game_cnt` AS `home_game_cnt`,
+        (`away`.`game_cnt` + `home`.`game_cnt`) AS `game_cnt`,
+        '' AS `eol`
+    FROM
+        ((`team_master` `tm`
+        LEFT JOIN (SELECT 
+            7 AS `dow`,
+                `game_info`.`away_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`away_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 7)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`away_team_initial`) `away` ON ((`away`.`team_initial` = `tm`.`team_initial_kana`)))
+        LEFT JOIN (SELECT 
+            7 AS `dow`,
+                `game_info`.`home_team_initial` AS `team_initial`,
+                COUNT(`game_info`.`home_team_initial`) AS `game_cnt`
+        FROM
+            `game_info`
+        WHERE
+            ((DAYOFWEEK(`game_info`.`date`) = 7)
+                AND (`game_info`.`no_game` = 0))
+        GROUP BY `game_info`.`home_team_initial`) `home` ON ((`home`.`team_initial` = `tm`.`team_initial_kana`)));
 
 --
 -- View structure for view `game_cnt_per_month`
