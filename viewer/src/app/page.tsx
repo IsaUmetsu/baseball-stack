@@ -82,6 +82,7 @@ async function fetchTeamRecentStats(teamInitial: string, selectedDate: string) {
     `SELECT id FROM game_info 
      WHERE (away_team_initial = ? OR home_team_initial = ?) 
        AND no_game = 0 
+       AND is_rg = 1 
        AND date <= ? 
      ORDER BY date DESC, game_no DESC
      LIMIT 5`,
