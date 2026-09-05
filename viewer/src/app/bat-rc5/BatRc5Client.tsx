@@ -12,6 +12,7 @@ const TEAM_NAMES = {
 const LEAGUE_TEAMS = {
   P: { H: "ソ", M: "ロ", E: "楽", F: "日", L: "西", B: "オ" },
   C: { G: "巨", T: "神", De: "デ", D: "中", C: "広", S: "ヤ" },
+  NPB: {},
 };
 
 interface BatRc5ClientProps {
@@ -116,19 +117,22 @@ export default function BatRc5Client({
         >
           <option value="P">パ・リーグ</option>
           <option value="C">セ・リーグ</option>
+          <option value="NPB">NPB全体</option>
         </select>
-        <select
-          value={localTeam}
-          onChange={(e) => setLocalTeam(e.target.value)}
-          className="border p-1 rounded"
-        >
-          <option value="%">リーグ全体</option>
-          {Object.keys(LEAGUE_TEAMS[localLeague]).map((team) => (
-            <option key={team} value={team}>
-              {TEAM_NAMES[team]}
-            </option>
-          ))}
-        </select>
+        {localLeague !== 'NPB' && (
+          <select
+            value={localTeam}
+            onChange={(e) => setLocalTeam(e.target.value)}
+            className="border p-1 rounded"
+          >
+            <option value="%">リーグ全体</option>
+            {Object.keys(LEAGUE_TEAMS[localLeague]).map((team) => (
+              <option key={team} value={team}>
+                {TEAM_NAMES[team]}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           onClick={handleFilterChange}
           disabled={isPending}
@@ -169,7 +173,7 @@ export default function BatRc5Client({
               <td className="p-2 border-b font-mono font-semibold text-center">{formatPct(row.average)}</td>
               <td className="p-2 border-b font-mono text-center">{row.bat}</td>
               <td className="p-2 border-b font-mono text-center">{row.hit}</td>
-              <td className="p-2 border-b text-center">{row.batter}</td>
+              <td className="p-2 border-b text-center">{row.batter} ({row.team})</td>
               <td className="p-2 border-b font-mono text-center">{row.hr}</td>
               <td className="p-2 border-b font-mono text-center">{row.rbi}</td>
             </tr>

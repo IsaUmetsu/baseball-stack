@@ -12,11 +12,13 @@ const TEAMS = {
 const LEAGUES = {
   P: ["H", "M", "E", "F", "L", "B"],
   C: ["G", "T", "De", "D", "C", "S"],
+  NPB: ["H", "M", "E", "F", "L", "B", "G", "T", "De", "D", "C", "S"],
 };
 
 const LEAGUE_TEAM_INITIALS = {
   P: ['ソ', 'ロ', '楽', '日', '西', 'オ'],
   C: ['巨', '神', 'デ', '中', '広', 'ヤ'],
+  NPB: ['ソ', 'ロ', '楽', '日', '西', 'オ', '巨', '神', 'デ', '中', '広', 'ヤ'],
 };
 
 export default async function BatRc5Page({
