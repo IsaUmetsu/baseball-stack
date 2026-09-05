@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { calculatePresetDates } from "./dateUtils";
 
 interface TeamStatsClientProps {
   initialData: any[];
@@ -11,6 +12,42 @@ interface TeamStatsClientProps {
   league: string;
   errorMsg: string | null;
 }
+
+const PRESET_DEFAULT_YEAR = 2026;
+
+// Helper to determine which preset matches the current dates
+const getPresetFromDates = (startDate: string, endDate: string, year: number): string => {
+  const presets = [
+    { key: 'march-april', label: '3・4月' },
+    { key: 'may', label: '5月' },
+    { key: 'june', label: '6月' },
+    { key: 'july', label: '7月' },
+    { key: 'august', label: '8月' },
+    { key: 'september-october', label: '9・10月' },
+    { key: 'this-week', label: '今週' }, // 'this-week' is dynamic, so it might not match perfectly if the year is different
+    { key: 'all-season', label: '全期間' },
+  ];
+
+  // For 'this-week', we need to calculate it for the current date, not the default year.
+  // This means 'this-week' won't be automatically selected if the page loads with a past 'this-week' range.
+  // This is acceptable as 'this-week' implies the current week.
+  const thisWeekDates = calculatePresetDates('this-week', new Date().getFullYear());
+
+  for (const preset of presets) {
+    if (preset.key === 'this-week') {
+      if (startDate === thisWeekDates.startDate && endDate === thisWeekDates.endDate) {
+        return preset.key;
+      }
+    } else {
+      const presetDates = calculatePresetDates(preset.key, year);
+      if (startDate === presetDates.startDate && endDate === presetDates.endDate) {
+        return preset.key;
+      }
+    }
+  }
+  return 'custom';
+};
+
 
 // Stats helper formatters
 function formatPct(val: any): string {
@@ -56,6 +93,9 @@ export default function TeamStatsClient({
   const [localStartDate, setLocalStartDate] = useState(startDate);
   const [localEndDate, setLocalEndDate] = useState(endDate);
   const [localLeague, setLocalLeague] = useState(league);
+  const [localSelectedPreset, setLocalSelectedPreset] = useState<'custom' | string>(() =>
+    getPresetFromDates(startDate, endDate, PRESET_DEFAULT_YEAR)
+  );
 
   // Auto-refresh on filters change
   const isInitialMount = useRef(true);
@@ -76,6 +116,7 @@ export default function TeamStatsClient({
     setLocalStartDate(startDate);
     setLocalEndDate(endDate);
     setLocalLeague(league);
+    setLocalSelectedPreset(getPresetFromDates(startDate, endDate, PRESET_DEFAULT_YEAR));
   }, [startDate, endDate, league]);
 
   // Client-side sorting state
@@ -84,7 +125,29 @@ export default function TeamStatsClient({
     direction: null,
   });
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedPresetKey = e.target.value;
+    setLocalSelectedPreset(selectedPresetKey);
+
+    if (selectedPresetKey !== "custom") {
+      const { startDate: newStartDate, endDate: newEndDate } =
+        calculatePresetDates(selectedPresetKey, PRESET_DEFAULT_YEAR);
+      setLocalStartDate(newStartDate);
+      setLocalEndDate(newEndDate);
+    }
+  };
+
+const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setLocalStartDate(e.target.value);
+  setLocalSelectedPreset("custom");
+};
+
+const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setLocalEndDate(e.target.value);
+  setLocalSelectedPreset("custom");
+};
+
+const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(() => {
       router.push(
@@ -155,14 +218,60 @@ export default function TeamStatsClient({
       {/* Control & Form Section */}
       <section className="bg-white border-b border-slate-200 p-4 md:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row items-end gap-4 max-w-7xl">
+          {/* Date Preset Selector */}
+          <div className="flex flex-col gap-1.5 w-full md:w-auto">
+            <label htmlFor="date-preset" className="text-xs font-semibold text-slate-600">期間プリセット</label>
+            <select
+              id="date-preset"
+              name="date-preset"
+              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-44"
+              value={localSelectedPreset}
+              onChange={handlePresetChange}
+            >
+              <option value="custom">カスタム (手動入力)</option>
+              <option value="march-april">3・4月</option>
+              <option value="may">5月</option>
+              <option value="june">6月</option>
+              <option value="july">7月</option>
+              <option value="august">8月</option>
+              <option value="september-october">9・10月</option>
+              <option value="this-week">今週</option>
+              <option value="all-season">全期間</option>
+            </select>
+          </div>
+
+          {/* Start Date */}
+          <div className="flex flex-col gap-1.5 w-full md:w-auto">
+            <label className="text-xs font-semibold text-slate-600">開始日 (startDate)</label>
+            <input
+              type="date"
+              value={localStartDate}
+              onChange={handleStartDateChange}
+              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-44"
+              required
+            />
+          </div>
+
+          {/* End Date */}
+          <div className="flex flex-col gap-1.5 w-full md:w-auto">
+            <label className="text-xs font-semibold text-slate-600">終了日 (endDate)</label>
+            <input
+              type="date"
+              value={localEndDate}
+              onChange={handleEndDateChange}
+              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-44"
+              required
+            />
+          </div>
+
+          {/* League Selector */}
           <div className="flex flex-col gap-1.5 w-full md:w-auto">
             <label className="text-xs font-semibold text-slate-600">リーグ選択</label>
             <div className="flex rounded-md shadow-sm">
               <button
                 type="button"
                 onClick={() => setLocalLeague("C")}
-                className={`px-4 py-2 text-xs font-medium border rounded-l-md transition-colors ${
-                  localLeague === "C"
+                className={`px-4 py-2 text-xs font-medium border rounded-l-md transition-colors ${localLeague === "C"
                     ? "bg-blue-600 border-blue-600 text-white font-semibold"
                     : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
                 }`}
@@ -172,8 +281,7 @@ export default function TeamStatsClient({
               <button
                 type="button"
                 onClick={() => setLocalLeague("P")}
-                className={`px-4 py-2 text-xs font-medium border-t border-b border-r rounded-r-md transition-colors ${
-                  localLeague === "P"
+                className={`px-4 py-2 text-xs font-medium border-t border-b border-r rounded-r-md transition-colors ${localLeague === "P"
                     ? "bg-blue-600 border-blue-600 text-white font-semibold"
                     : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
                 }`}
@@ -183,27 +291,15 @@ export default function TeamStatsClient({
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 w-full md:w-auto">
-            <label className="text-xs font-semibold text-slate-600">開始日 (startDate)</label>
-            <input
-              type="date"
-              value={localStartDate}
-              onChange={(e) => setLocalStartDate(e.target.value)}
-              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-44"
-              required
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5 w-full md:w-auto">
-            <label className="text-xs font-semibold text-slate-600">終了日 (endDate)</label>
-            <input
-              type="date"
-              value={localEndDate}
-              onChange={(e) => setLocalEndDate(e.target.value)}
-              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-44"
-              required
-            />
-          </div>
+          {/* Search Button */}
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="ml-auto py-1.5 px-4 inline-flex justify-center border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            disabled={isPending}
+          >
+            {isPending ? "検索中..." : "検索"}
+          </button>
         </div>
       </section>
 
