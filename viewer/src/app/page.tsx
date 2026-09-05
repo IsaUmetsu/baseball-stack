@@ -657,4 +657,11 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
       )}
     </main>
   );
+
+        <div className="mt-8">
+          <Link href="/admin/scraper">
+            <a className="text-blue-500 hover:underline">Go to Scraper Page</a>
+          </Link>
+        </div>
+
 }
