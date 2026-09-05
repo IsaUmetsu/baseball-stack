@@ -57,3 +57,22 @@ WHERE
   tm.league LIKE ?
 ORDER BY average DESC;
 `;
+
+export const BAT_RC5_LEAGUE_QUERY = `
+SELECT
+  batter AS batter,
+  pa,
+  bat,
+  hit,
+  average,
+  hr,
+  rbi,
+  b_team AS team
+FROM
+  baseball_2026.debug_game_bat_rc5
+WHERE
+  b_team IN (?)
+ORDER BY
+  average DESC
+`;
+;
