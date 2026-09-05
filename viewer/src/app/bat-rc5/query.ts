@@ -29,7 +29,7 @@ FROM (
       ) as recent_games
     )
   GROUP BY current_batter_name, b_team
-  HAVING pa >= 1
+  HAVING pa >= 15.5
 ) AS base
 LEFT JOIN (
   SELECT

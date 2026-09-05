@@ -109,27 +109,23 @@ export default function BatRc5Client({
       <table className="min-w-full bg-white border">
         <thead className="bg-gray-200">
           <tr>
-            <th className="p-2 border-b">Player</th>
-            <th className="p-2 border-b">Team</th>
-            <th className="p-2 border-b">AVG</th>
-            <th className="p-2 border-b">PA</th>
-            <th className="p-2 border-b">AB</th>
-            <th className="p-2 border-b">H</th>
-            <th className="p-2 border-b">HR</th>
-            <th className="p-2 border-b">RBI</th>
+            <th className="p-2 border-b text-center">打率</th>
+            <th className="p-2 border-b text-center">打数</th>
+            <th className="p-2 border-b text-center">安打</th>
+            <th className="p-2 border-b text-center">選手名</th>
+            <th className="p-2 border-b text-center">本塁打</th>
+            <th className="p-2 border-b text-center">打点</th>
           </tr>
         </thead>
         <tbody>
           {initialData.map((row, idx) => (
             <tr key={idx} className="hover:bg-gray-100">
-              <td className="p-2 border-b">{row.batter}</td>
-              <td className="p-2 border-b">{row.team}</td>
-              <td className="p-2 border-b font-mono font-semibold">{formatPct(row.average)}</td>
-              <td className="p-2 border-b font-mono">{row.pa}</td>
-              <td className="p-2 border-b font-mono">{row.bat}</td>
-              <td className="p-2 border-b font-mono">{row.hit}</td>
-              <td className="p-2 border-b font-mono">{row.hr}</td>
-              <td className="p-2 border-b font-mono">{row.rbi}</td>
+              <td className="p-2 border-b font-mono font-semibold text-center">{formatPct(row.average)}</td>
+              <td className="p-2 border-b font-mono text-center">{row.bat}</td>
+              <td className="p-2 border-b font-mono text-center">{row.hit}</td>
+              <td className="p-2 border-b text-center">{row.batter}</td>
+              <td className="p-2 border-b font-mono text-center">{row.hr}</td>
+              <td className="p-2 border-b font-mono text-center">{row.rbi}</td>
             </tr>
           ))}
         </tbody>
