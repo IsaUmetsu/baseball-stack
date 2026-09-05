@@ -681,11 +681,52 @@ try:
                                 print(f"DEBUG: Error during signature check: {e}")
                                 # Continue loop if there's an error, hoping it's transient
                                 pass
-                        else: # This block executes if the while loop completes without a 'break'
-                            print(f"WARNING: Scene signature did not change after 20 seconds. Previous: {prev_sig}, Current: {current_sig}. Breaking scene loop for this game.")
-                            # If the signature hasn't changed, it means the scene is stuck.
-                            # We should break out of the inner while True loop (game scene loop)
-                            break # Break out of the inner while True loop (game scene loop)
+                        else:  # タイムアウトした場合のフォールバック処理
+                            print(f"WARNING: Scene signature did not change. Attempting to advance to next inning.")
+                            
+                            # 現在のイニング表示を再取得して試合終了か確認
+                            inning_text = util.getText("inning")
+                            if inning_text == "試合終了":
+                                print("INFO: Game is over. Breaking scene loop.")
+                                break
+
+                            try:
+                                # 現在のイニング情報をパース
+                                current_inning_str = data["liveHeader"]["inning"]
+                                match = re.match(r'(\d+)回(表|裏)', current_inning_str)
+                                
+                                if not match:
+                                    print(f"ERROR: Could not parse current inning '{current_inning_str}'. Breaking loop.")
+                                    break
+                                
+                                current_inning_num = int(match.group(1))
+                                current_top_btm = match.group(2)
+
+                                # 次のイニングを計算
+                                if current_top_btm == "表":
+                                    next_inning_num = current_inning_num
+                                    next_top_btm = "裏"
+                                else:  # "裏"
+                                    next_inning_num = current_inning_num + 1
+                                    next_top_btm = "表"
+                                
+                                print(f"INFO: Advancing from {current_inning_str} to {next_inning_num}回{next_top_btm}.")
+
+                                # 次のイニングのタブをクリック
+                                selector_next_inning = getInningSelector(next_inning_num, next_top_btm)
+                                elem_next_inning = contentMain.find_element_by_css_selector(selector_next_inning)
+                                safe_click(elem_next_inning)
+
+                                # ページが更新されるのを待つ
+                                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
+                                contentMain = driver.find_element_by_css_selector("#contentMain")
+                                util = Util(contentMain)
+                                # ループを継続して新しいシーンを処理
+                                continue
+
+                            except Exception as e:
+                                print(f"ERROR: Could not find or click next inning tab. Maybe game is over. Error: {e}. Breaking loop.")
+                                break
 
                         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
                         contentMain = driver.find_element_by_css_selector("#contentMain")
