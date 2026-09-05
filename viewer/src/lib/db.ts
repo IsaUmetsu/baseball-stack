@@ -27,6 +27,6 @@ export function getDbPool() {
 
 export async function query<T>(sql: string, params?: any[]): Promise<T> {
   const dbPool = getDbPool();
-  const [rows] = await dbPool.execute(sql, params);
+  const [rows] = await dbPool.query(sql, params);
   return rows as T;
 }

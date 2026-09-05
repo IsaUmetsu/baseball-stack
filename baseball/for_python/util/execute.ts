@@ -42,7 +42,9 @@ export const execBatRc5Team = async (teamArg = '', leagueArg = '', isTweet = tru
   const manager = await AppDataSource.manager;
   for (const team of teams) {
     const teamIniEn = getTeamIniEn(team);
-    const results: BatterResult[] = await manager.query(getQueryBatRc5Team(team));
+    const query = getQueryBatRc5Team(team);
+    console.log(query);
+    const results: BatterResult[] = await manager.query(query);
 
     const title = format('%s打者 最近5試合 打撃成績\n', teamNames[teamIniEn]);
     const rows = createBatterResultRows(results);
@@ -163,7 +165,9 @@ const execRc5Npb = async (isTweet = true, teamArg = '', leagueArg = '', sortArg 
 
   const manager = await AppDataSource.manager;
   for (const { sort } of dispTargets) {
-    const results: BatterResult[] = await manager.query(getQueryBatRc5Npb(teams, col, sort, base));
+    const query = getQueryBatRc5Npb(teams, col, sort, base);
+    console.log(query);
+    const results: BatterResult[] = await manager.query(query);
 
     const title = format('NPB 最近5試合 優秀%s打者\n(16打席以上%s)\n', titlePart, titleOption ? format('、%s', titleOption) : '');
     const rows = createRows(results);
@@ -242,7 +246,9 @@ const execRc5All = async (isTweet = true, teamArg = '', leagueArg = '', sortArg 
 
   const manager = await AppDataSource.manager;
   for (const { team, sort } of dispTargets) {
-    const results: BatterResult[] = await manager.query(getQueryBatRc5All(team, col, sort));
+        const query = getQueryBatRc5All(team, col, sort);
+    console.log(query);
+    const results: BatterResult[] = await manager.query(query);
 
     const sortTitle = sort == 'ASC' ? 'ワースト' : 'トップ';
     const title = format('%s打者 最近5試合 %s %s10\n(16打席以上%s)\n', getTeamTitle(leagueArg, team), titlePart, sortTitle, titleOption ? format('、%s', titleOption) : '');
