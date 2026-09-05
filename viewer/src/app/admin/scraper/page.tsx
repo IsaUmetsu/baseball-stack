@@ -2,14 +2,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { StatusMatrix } from './StatusMatrix'; // Assuming StatusMatrix is in a separate file
+import { StatusMatrix } from './StatusMatrix';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import { format, parse } from 'date-fns';
 
 const SCRIPT_TYPES = ["scenes", "stats", "starter"];
 
+const yyyymmdd = "yyyyMMdd";
+
 export default function ScraperAdminPage() {
     // Form state
-    const [startDate, setStartDate] = useState('20260421');
-    const [endDate, setEndDate] = useState('20260425');
+    const [startDate, setStartDate] = useState(new Date('2026-04-21'));
+    const [endDate, setEndDate] = useState(new Date('2026-04-25'));
     const [script, setScript] = useState('all');
 
     // Execution state
@@ -28,8 +33,8 @@ export default function ScraperAdminPage() {
     const handleRunScript = async (runParams = {}) => {
         const { 
             script_name = script, 
-            start_date = startDate, 
-            end_date = endDate 
+            start_date = format(startDate, yyyymmdd), 
+            end_date = format(endDate, yyyymmdd) 
         } = runParams;
 
         if (isRunning) return;
@@ -55,6 +60,9 @@ export default function ScraperAdminPage() {
         };
     };
 
+    const startDateStr = format(startDate, yyyymmdd);
+    const endDateStr = format(endDate, yyyymmdd);
+
     return (
         <div className="p-4 md:p-8 font-sans">
             <header className="mb-8">
@@ -74,11 +82,23 @@ export default function ScraperAdminPage() {
                     </div>
                     <div>
                         <label htmlFor="start-date" className="block text-sm font-medium text-gray-700">Start Date</label>
-                        <input type="text" id="start-date" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="YYYYMMDD" />
+                        <DatePicker
+                            id="start-date"
+                            selected={startDate}
+                            onChange={(date) => setStartDate(date)}
+                            dateFormat={yyyymmdd}
+                            className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        />
                     </div>
                     <div>
                         <label htmlFor="end-date" className="block text-sm font-medium text-gray-700">End Date</label>
-                        <input type="text" id="end-date" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="YYYYMMDD" />
+                        <DatePicker
+                            id="end-date"
+                            selected={endDate}
+                            onChange={(date) => setEndDate(date)}
+                            dateFormat={yyyymmdd}
+                            className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        />
                     </div>
                     <button onClick={() => handleRunScript()} disabled={isRunning} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-indigo-300 transition duration-150 ease-in-out">
                         {isRunning ? "Running..." : "Run Execution"}
@@ -94,7 +114,8 @@ export default function ScraperAdminPage() {
                 </div>
             </section>
 
-            <StatusMatrix startDate={startDate} endDate={endDate} handleRunScript={handleRunScript} />
+            <StatusMatrix startDate={startDateStr} endDate={endDateStr} handleRunScript={handleRunScript} />
         </div>
     );
 }
+
