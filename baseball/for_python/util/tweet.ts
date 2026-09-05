@@ -1,4 +1,4 @@
-import { client } from '../tweet/twitter';
+// import { client } from '../tweet/twitter';
 import * as moment from 'moment';
 import { Tweet } from '../entities';
 import { AppDataSource } from './datasource';
@@ -130,8 +130,8 @@ export const tweet = async (title: string, rows: string[], footer?: string) => {
 const doTweet = async status => {
   let res = '';
   try {
-    const tweet = await client.post('statuses/update', { status });
-    res = tweet.id_str;
+    // const tweet = await client.post('statuses/update', { status });
+    // res = tweet.id_str;
     console.log('---------- tweeted ----------');
   } catch (err) {
     console.log(err);
@@ -181,8 +181,8 @@ const doTweetMulti = async (status, in_reply_to_status_id) => {
   let res = '';
   try {
     // console.log(status)
-    const { id_str } = await client.post('statuses/update', { status, in_reply_to_status_id });
-    res = id_str;
+    // const { id_str } = await client.post('statuses/update', { status, in_reply_to_status_id });
+    // res = id_str;
     console.log('---------- tweeted ----------');
   } catch (err) {
     console.log(err);
