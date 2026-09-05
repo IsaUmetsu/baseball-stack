@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -56,6 +56,20 @@ export default function TeamStatsClient({
   const [localStartDate, setLocalStartDate] = useState(startDate);
   const [localEndDate, setLocalEndDate] = useState(endDate);
   const [localLeague, setLocalLeague] = useState(league);
+
+  // Auto-refresh on filters change
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      startTransition(() => {
+        router.push(
+          `/team-stats?startDate=${localStartDate}&endDate=${localEndDate}&league=${localLeague}`
+        );
+      });
+    }
+  }, [localStartDate, localEndDate, localLeague, router]);
 
   // Sync state with props when page changes
   useEffect(() => {
@@ -140,7 +154,7 @@ export default function TeamStatsClient({
 
       {/* Control & Form Section */}
       <section className="bg-white border-b border-slate-200 p-4 md:p-6 shadow-sm">
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-end gap-4 max-w-7xl">
+        <div className="flex flex-col md:flex-row items-end gap-4 max-w-7xl">
           <div className="flex flex-col gap-1.5 w-full md:w-auto">
             <label className="text-xs font-semibold text-slate-600">リーグ選択</label>
             <div className="flex rounded-md shadow-sm">
@@ -190,25 +204,7 @@ export default function TeamStatsClient({
               required
             />
           </div>
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-6 py-2.5 rounded-md shadow-sm transition-all flex items-center justify-center gap-1.5 w-full md:w-auto disabled:opacity-50"
-          >
-            {isPending ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                集計中...
-              </>
-            ) : (
-              "集計実行"
-            )}
-          </button>
-        </form>
+        </div>
       </section>
 
       {/* Main Content Area */}
