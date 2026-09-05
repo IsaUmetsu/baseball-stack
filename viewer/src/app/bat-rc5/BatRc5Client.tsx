@@ -46,6 +46,40 @@ export default function BatRc5Client({
   const [localDate, setLocalDate] = useState(targetDate);
   const [localLeague, setLocalLeague] = useState(targetLeague);
   const [localTeam, setLocalTeam] = useState(targetTeam);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: string } | null>({ key: 'average', direction: 'desc' });
+
+  const sortedData = [...initialData].sort((a, b) => {
+    if (sortConfig === null) {
+      return 0;
+    }
+    const { key, direction } = sortConfig;
+    const valA = a[key];
+    const valB = b[key];
+
+    if (valA == null && valB == null) return 0;
+    if (valA == null) return 1;
+    if (valB == null) return -1;
+    
+    const numA = Number(valA);
+    const numB = Number(valB);
+
+    if (numA < numB) {
+      return direction === 'asc' ? -1 : 1;
+    }
+    if (numA > numB) {
+      return direction === 'asc' ? 1 : -1;
+    }
+
+    return 0;
+  });
+
+  const requestSort = (key: string) => {
+    let direction = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const handleFilterChange = () => {
     const params = new URLSearchParams();
@@ -109,16 +143,28 @@ export default function BatRc5Client({
       <table className="min-w-full bg-white border">
         <thead className="bg-gray-200">
           <tr>
-            <th className="p-2 border-b text-center">打率</th>
-            <th className="p-2 border-b text-center">打数</th>
-            <th className="p-2 border-b text-center">安打</th>
-            <th className="p-2 border-b text-center">選手名</th>
-            <th className="p-2 border-b text-center">本塁打</th>
-            <th className="p-2 border-b text-center">打点</th>
+            <th className="p-2 border-b text-center cursor-pointer" onClick={() => requestSort('average')}>
+              打率 {sortConfig?.key === 'average' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th className="p-2 border-b text-center cursor-pointer" onClick={() => requestSort('bat')}>
+              打数 {sortConfig?.key === 'bat' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th className="p-2 border-b text-center cursor-pointer" onClick={() => requestSort('hit')}>
+              安打 {sortConfig?.key === 'hit' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th className="p-2 border-b text-center">
+              選手名
+            </th>
+            <th className="p-2 border-b text-center cursor-pointer" onClick={() => requestSort('hr')}>
+              本塁打 {sortConfig?.key === 'hr' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th className="p-2 border-b text-center cursor-pointer" onClick={() => requestSort('rbi')}>
+              打点 {sortConfig?.key === 'rbi' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
           </tr>
         </thead>
         <tbody>
-          {initialData.map((row, idx) => (
+          {sortedData.map((row, idx) => (
             <tr key={idx} className="hover:bg-gray-100">
               <td className="p-2 border-b font-mono font-semibold text-center">{formatPct(row.average)}</td>
               <td className="p-2 border-b font-mono text-center">{row.bat}</td>
