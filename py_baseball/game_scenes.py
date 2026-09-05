@@ -5,6 +5,7 @@ from collections import OrderedDict
 import pprint
 import datetime
 import os
+import hashlib
 import argparse
 
 from selenium.common.exceptions import TimeoutException
@@ -317,6 +318,8 @@ try:
             # 処理開始シーン定義
             scene = fileCount
             
+            loop_context = type('obj', (object,), {})()
+            
             def get_scene_signature(u):
                 try:
                     pitch_details_text = ""
@@ -623,20 +626,31 @@ try:
                     data["homeTeamInfo"] = cached_home_team_info
                     data["awayTeamInfo"] = cached_away_team_info
 
-                    # save as json
-                    with open("{0}/{1}.json".format(fullGamePath, scene), 'w') as f:
-                        json.dump(data, f, indent=2, ensure_ascii=False)
+                    # --- 保存の直前 (json.dumpの直前) に追加 ---
+                    current_json_str = json.dumps(data, sort_keys=True) # 保存対象のdict
+                    current_hash = hashlib.md5(current_json_str.encode()).hexdigest()
 
-                    print("----- [done] date: {0}, gameNo: {1}, {2} vs {3}, scene: {4:3d}, inning: {5}, {6}アウト, {7:3.1f}[sec] -----".format(
-                        targetDate.strftime("%m/%d"),
-                        gameNo,
-                        away_initial,
-                        home_initial,
-                        scene,
-                        data["liveHeader"]["inning"],
-                        data["liveHeader"]["count"]["o"],
-                        time.time() - startTime
-                    ))
+                    if hasattr(loop_context, 'prev_hash') and loop_context.prev_hash == current_hash:
+                        print(f"[WARN] 直前のシーンと完全一致したためスキップ/待機します")
+                        time.sleep(1.0)
+                        scene -= 1 # jsonファイルが連番になるように調整
+                    else:
+                        loop_context.prev_hash = current_hash
+                        # --- ここまで追加して、既存の json.dump へ進む ---
+                        # save as json
+                        with open("{0}/{1}.json".format(fullGamePath, scene), 'w') as f:
+                            json.dump(data, f, indent=2, ensure_ascii=False)
+
+                        print("----- [done] date: {0}, gameNo: {1}, {2} vs {3}, scene: {4:3d}, inning: {5}, {6}アウト, {7:3.1f}[sec] -----".format(
+                            targetDate.strftime("%m/%d"),
+                            gameNo,
+                            away_initial,
+                            home_initial,
+                            scene,
+                            data["liveHeader"]["inning"],
+                            data["liveHeader"]["count"]["o"],
+                            time.time() - startTime
+                        ))
 
                     #「次へ」ボタン押下
                     prev_sig = get_scene_signature(util)
