@@ -353,8 +353,16 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
           </h1>
           <p className="text-xs text-slate-400 mt-1">日付・試合ごとのドリルダウン閲覧ツール</p>
         </div>
-        <div className="text-xs font-mono text-slate-400 bg-slate-800 px-3 py-1 rounded-md mt-2 md:mt-0">
-          Next.js App Router × debug_base
+        <div className="flex items-center gap-3 mt-2 md:mt-0">
+          <Link
+            href="/team-stats"
+            className="text-xs bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+          >
+            📊 チーム成績サマリー
+          </Link>
+          <div className="text-xs font-mono text-slate-400 bg-slate-800 px-3 py-2 rounded-md">
+            Next.js App Router × debug_base
+          </div>
         </div>
       </header>
 
