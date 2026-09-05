@@ -55,19 +55,28 @@ async def run_script(script_name: str, start_date: str, end_date: str):
 @app.get("/admin/status")
 async def get_status(start_date: str, end_date: str):
     results = []
-    start_dt = datetime.strptime(start_date, "%Y%m%d")
-    end_dt = datetime.strptime(end_date, "%Y%m%d")
-    
+    try:
+        start_dt = datetime.strptime(start_date, "%Y%m%d")
+        end_dt = datetime.strptime(end_date, "%Y%m%d")
+    except ValueError:
+        return {"error": "Invalid date format. Please use YYYYMMDD."}
+
     current_dt = start_dt
     while current_dt <= end_dt:
-        date_str = current_dt.strftime("%Y%m%d")
-        day_status = {"date": date_str, "status": {}}
+        date_str_api = current_dt.strftime("%Y%m%d")
+        date_str_display = current_dt.strftime("%Y-%m-%d")
+        day_status = {"date": date_str_display, "status": {}}
         
         for script_type in OUTPUT_DIRS:
-            dir_path = os.path.join(OUTPUT_DIRS[script_type], date_str)
+            dir_path = os.path.join(OUTPUT_DIRS[script_type], date_str_api)
             file_count = 0
             if os.path.exists(dir_path) and os.path.isdir(dir_path):
-                file_count = len([name for name in os.listdir(dir_path) if name.endswith(".json") and os.path.getsize(os.path.join(dir_path, name)) > 0])
+                for root, _, files in os.walk(dir_path):
+                    for name in files:
+                        if name.endswith(".json"):
+                            file_path = os.path.join(root, name)
+                            if os.path.getsize(file_path) > 0:
+                                file_count += 1
             
             day_status["status"][script_type] = {
                 "exists": file_count > 0,
@@ -80,13 +89,26 @@ async def get_status(start_date: str, end_date: str):
 
 # 3. File List Endpoint
 @app.get("/admin/files")
-async def list_files(script_type: str, date: str):
-    dir_path = os.path.join(OUTPUT_DIRS[script_type], date)
+async def list_files(script_type: str, date: str): # date should be YYYYMMDD
+    if script_type not in OUTPUT_DIRS:
+        return {"error": "Invalid script type"}
+        
+    base_dir = OUTPUT_DIRS[script_type]
+    dir_path = os.path.join(base_dir, date)
+
     if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-        return {"error": "Directory not found"}
+        return {"error": f"Directory not found for {script_type} on {date}", "files": []}
     
-    files = [name for name in os.listdir(dir_path) if name.endswith(".json")]
-    return {"files": files}
+    file_list = []
+    for root, _, files in os.walk(dir_path):
+        for name in files:
+            if name.endswith(".json"):
+                full_path = os.path.join(root, name)
+                # Return path relative to BASE_DATA_PATH for the file content API
+                relative_path = os.path.relpath(full_path, BASE_DATA_PATH)
+                file_list.append(relative_path)
+    
+    return {"files": sorted(file_list)}
 
 # 4. File Content Endpoint
 @app.get("/admin/file-content")

@@ -48,16 +48,74 @@ const FilePreviewModal = ({ filePath, onClose }) => {
 };
 
 
+const FileListModal = ({ scriptType, date, onClose, onFileSelect }) => {
+    const [files, setFiles] = useState([]);
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchFiles = async () => {
+            setIsLoading(true);
+            setError('');
+            try {
+                // date is YYYY-MM-DD, convert to YYYYMMDD for the API
+                const date_yyyymmdd = date.replace(/-/g, '');
+                const res = await fetch(`/api/admin/files?script_type=${scriptType}&date=${date_yyyymmdd}`);
+                if (!res.ok) throw new Error('Failed to fetch file list.');
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                setFiles(data.files);
+            } catch (err) {
+                setError(err.message);
+            }
+            setIsLoading(false);
+        };
+
+        if (scriptType && date) {
+            fetchFiles();
+        }
+    }, [scriptType, date]);
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-full flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-bold">Files for {scriptType} on {date}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <div className="p-4 overflow-y-auto">
+                    {isLoading && <p>Loading files...</p>}
+                    {error && <div className="text-red-500">{error}</div>}
+                    {files.length > 0 ? (
+                        <ul className="list-disc pl-5">
+                            {files.map(file => (
+                                <li key={file} className="text-sm text-blue-600 hover:underline cursor-pointer" onClick={() => onFileSelect(file)}>
+                                    {file}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        !isLoading && <p>No JSON files found.</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
 
 export function StatusMatrix({ startDate, endDate, handleRunScript }) {
     const [statusData, setStatusData] = useState([]);
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
     const [previewingFile, setPreviewingFile] = useState(null);
+    const [viewingFilesFor, setViewingFilesFor] = useState(null); // { scriptType: string, date: string } | null
 
     const fetchStatus = async () => {
         setIsLoadingStatus(true);
         try {
-            const res = await fetch(`/api/admin/status?start_date=${startDate}&end_date=${endDate}`);
+            const res = await fetch(`/api/admin/status?start_date=${startDate.replace(/-/g, '')}&end_date=${endDate.replace(/-/g, '')}`);
             const data = await res.json();
             setStatusData(data);
         } catch (error) {
@@ -67,25 +125,36 @@ export function StatusMatrix({ startDate, endDate, handleRunScript }) {
     };
 
     useEffect(() => {
-        fetchStatus();
+        if (startDate && endDate) {
+            fetchStatus();
+        }
     }, [startDate, endDate]);
 
     const handleReRun = (date) => {
         handleRunScript({ start_date: date, end_date: date, script_name: 'all' });
     };
 
-    const handleStatusClick = async (scriptType, date) => {
-        // This is a simplified example. A better UX would be to open a modal with a list of files.
-        const dirPath = `${scriptType}/${date}`;
-        // For simplicity, let's just try to preview the first file if it exists.
-        // A full implementation would fetch the file list first.
-        const filePath = `${dirPath}/01.json`; // This is a guess
-        setPreviewingFile(filePath);
+    const handleStatusClick = (scriptType, date) => {
+        // Open the file list modal
+        setViewingFilesFor({ scriptType, date });
     };
+
+    const handleFileSelect = (filePath) => {
+        setViewingFilesFor(null); // Close file list modal
+        setPreviewingFile(filePath); // Open file content modal
+    }
 
     return (
         <section>
             {previewingFile && <FilePreviewModal filePath={previewingFile} onClose={() => setPreviewingFile(null)} />}
+            {viewingFilesFor && (
+                <FileListModal
+                    scriptType={viewingFilesFor.scriptType}
+                    date={viewingFilesFor.date}
+                    onClose={() => setViewingFilesFor(null)}
+                    onFileSelect={handleFileSelect}
+                />
+            )}
             <div className="flex justify-between items-center mb-2">
                 <h2 className="text-xl font-semibold text-gray-700">Generation Status Matrix</h2>
                 <button onClick={fetchStatus} disabled={isLoadingStatus} className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-3 rounded-md disabled:opacity-50">
