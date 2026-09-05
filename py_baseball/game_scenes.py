@@ -652,15 +652,26 @@ try:
                         
                         # シグネチャが切り替わるまで待機
                         start_wait = time.time()
-                        while time.time() - start_wait < 5.0:
-                            time.sleep(0.1)
+                        current_sig = prev_sig # Initialize current_sig for the loop
+                        while time.time() - start_wait < 20.0: # Increased timeout to 20 seconds
+                            time.sleep(0.5) # Increased sleep interval for less frequent checks
                             try:
+                                # Re-fetch contentMain and util inside the loop to ensure fresh elements
                                 contentMain = driver.find_element_by_css_selector("#contentMain")
                                 util = Util(contentMain)
-                                if get_scene_signature(util) != prev_sig:
+                                current_sig = get_scene_signature(util)
+                                if current_sig != prev_sig:
+                                    print(f"DEBUG: Scene signature changed: {prev_sig[:5]} -> {current_sig[:5]}")
                                     break
-                            except Exception:
+                            except Exception as e:
+                                print(f"DEBUG: Error during signature check: {e}")
+                                # Continue loop if there's an error, hoping it's transient
                                 pass
+                        else: # This block executes if the while loop completes without a 'break'
+                            print(f"WARNING: Scene signature did not change after 20 seconds. Previous: {prev_sig}, Current: {current_sig}. Breaking scene loop for this game.")
+                            # If the signature hasn't changed, it means the scene is stuck.
+                            # We should break out of the inner while True loop (game scene loop)
+                            break # Break out of the inner while True loop (game scene loop)
 
                         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#contentMain")))
                         contentMain = driver.find_element_by_css_selector("#contentMain")
