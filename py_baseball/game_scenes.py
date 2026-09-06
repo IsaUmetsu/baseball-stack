@@ -221,7 +221,11 @@ try:
 
             # 指定のイニングに遷移
             selectorInning = getInningSelector(fromInning, fromTopBtm)
-            elem_inning = contentMain.find_element_by_css_selector(selectorInning)
+            elems_inning = contentMain.find_elements(By.CSS_SELECTOR, selectorInning)
+            if not elems_inning:
+                print(f"INFO: Inning tab for {fromInning}回{fromTopBtm} not found. Assuming game has ended. Skipping to next game.")
+                continue
+            elem_inning = elems_inning[0]
             safe_click(elem_inning)
 
             # ページ遷移完了（イニング表示の更新）を待機
