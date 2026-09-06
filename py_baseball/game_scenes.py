@@ -464,9 +464,9 @@ try:
                                 })
                             pitchDetails = current_pitchDetails
                             break
-                        except StaleElementReferenceException:
+                        except (StaleElementReferenceException, AttributeError, IndexError) as e:
                             if attempt == 2:
-                                print("StaleElementReferenceException occurred in pitchDetails after 3 attempts. Safely continuing.")
+                                print(f"WARNING: {type(e).__name__} occurred in pitchDetails after 3 attempts. Safely continuing.")
                             else:
                                 time.sleep(0.5)
                                 contentMain = driver.find_element_by_css_selector("#contentMain")
