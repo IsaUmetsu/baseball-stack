@@ -21,6 +21,7 @@ from util import Util
 from common import getGameNos, commonWait
 
 parser = argparse.ArgumentParser(prog="blowser", add_help=True)
+parser.add_argument('-d', '--date', type=str, default=None, help="Specify a single date to process (e.g., 0510). Overrides --season-start and --season-end.")
 parser.add_argument('-ss', '--season-start', type=str, default=datetime.datetime.now().strftime("%m%d"))
 parser.add_argument('-se', '--season-end', type=str, default=datetime.datetime.now().strftime("%m%d"))
 parser.add_argument('-s', '--specify', nargs='+', type=str)
@@ -51,8 +52,12 @@ def parse_date(date_str):
     else:
         raise ValueError(f"Invalid date format: {date_str}")
 
-targetDate = parse_date(args.season_start)
-dateEnd = parse_date(args.season_end)
+if args.date:
+    targetDate = parse_date(args.date)
+    dateEnd = parse_date(args.date)
+else:
+    targetDate = parse_date(args.season_start)
+    dateEnd = parse_date(args.season_end)
 
 print("----- current time: {0} -----".format(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")))
 
