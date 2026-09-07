@@ -43,9 +43,9 @@ def main():
 
         # Define base path for storing data, mirroring original config
         _BASE = os.environ.get("PY_BASEBALL_DATA_DIR", "/Users/IsamuUmetsu/dev/py_baseball")
-        pitch_stats_path = os.path.join(_BASE, "pitcherStats_new")
-        bat_stats_path = os.path.join(_BASE, "batterStats_new")
-        text_stats_path = os.path.join(_BASE, "text_new")
+        pitch_stats_path = os.path.join(_BASE, "pitcherStats")
+        bat_stats_path = os.path.join(_BASE, "batterStats")
+        text_stats_path = os.path.join(_BASE, "text")
 
         with get_webdriver(browser=args.browser) as driver:
             # 1. Initialize Infrastructure components

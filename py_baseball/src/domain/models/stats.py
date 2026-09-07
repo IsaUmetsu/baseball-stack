@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 @dataclass(frozen=True)
@@ -54,13 +54,22 @@ class TextSummary:
     detail: str
 
 @dataclass(frozen=True)
+class TeamPitcherStats:
+    team: str
+    stats: List[PitcherStats] = field(default_factory=list)
+
+@dataclass(frozen=True)
+class TeamBatterStats:
+    team: str
+    stats: List[BatterStats] = field(default_factory=list)
+
+@dataclass(frozen=True)
 class GameStats:
     game_id: str
-    home_team: str
-    away_team: str
-    home_pitcher_stats: List[PitcherStats]
-    away_pitcher_stats: List[PitcherStats]
-    home_batter_stats: List[BatterStats]
-    away_batter_stats: List[BatterStats]
-    scoreboard: List[ScoreBoard]
-    text_summary: List[TextSummary]
+    is_finished: bool
+    home_pitcher: TeamPitcherStats
+    away_pitcher: TeamPitcherStats
+    home_batter: TeamBatterStats
+    away_batter: TeamBatterStats
+    text_summary: List[TextSummary] = field(default_factory=list)
+    scoreboard: List[ScoreBoard] = field(default_factory=list)
