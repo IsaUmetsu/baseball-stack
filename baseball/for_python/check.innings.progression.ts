@@ -44,13 +44,16 @@ const inningToIndex = (inning: string): number => {
   return (inningNum - 1) * 2 + (isUra ? 1 : 0);
 };
 
+const MULTI_OUT_KEYWORDS = ['併殺', '三重殺', 'ゲッツー', 'タッチアウト', '戻れず', '盗塁失敗', '守備妨害'] as const;
+
 /**
- * 併殺（ゲッツー）や三重殺（トリプルプレー）に該当するプレーかを判定する
+ * 複数アウト（併殺・三重殺・走塁死等）に該当するプレーかを判定する
  */
-const isDoubleOrTriplePlay = (battingResult: string, pitchingResult: string): boolean => {
-  const target = `${battingResult || ''} ${pitchingResult || ''}`;
-  return target.includes('併殺') || target.includes('三重殺') || target.includes('ゲッツー');
+const isDoubleOrTriplePlay = (battingResult = '', pitchingResult = ''): boolean => {
+  const target = `${battingResult} ${pitchingResult}`;
+  return MULTI_OUT_KEYWORDS.some(keyword => target.includes(keyword));
 };
+
 
 const doCheck = async (gameNo: number, dateStr: string) => {
   const targetGameNo = format('0%d', gameNo);
