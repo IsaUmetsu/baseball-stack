@@ -1,6 +1,7 @@
 import { format } from 'util';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as moment from 'moment';
 import { OutputJson } from './type/jsonType';
 import { checkGameDir, getJson, countFiles, checkDateDir, BASEBALL_DATA_DIR } from './util/fs';
 import { checkArgDaySeasonEndSpecify } from './util/display';
@@ -242,6 +243,18 @@ const main = async () => {
   if (rerunCommands.length > 0) {
     console.log('\n----- RERUN COMMANDS LIST -----');
     rerunCommands.forEach(cmd => console.log(cmd));
+
+    // 2行以上の場合は一括実行用シェルスクリプトを自動生成
+    if (rerunCommands.length >= 2) {
+      const timestamp = moment().format('YYYYMMDDHHmmss');
+      const filename = `rerun-${timestamp}.sh`;
+      const filePath = path.join(process.cwd(), filename);
+      const shContent = `#!/bin/bash\n\n${rerunCommands.join('\n')}\n\necho "===== RERUN COMPLETE =====\n"`;
+      fs.writeFileSync(filePath, shContent, 'utf8');
+      fs.chmodSync(filePath, 0o755);
+      console.log(`\n[INFO] 複数件の再取得コマンドがあるため、シェルスクリプトを自動生成しました: baseball/${filename}`);
+      console.log(`実行方法: bash baseball/${filename}\n`);
+    }
   }
   console.log('----- all check finished -----');
 };
