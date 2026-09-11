@@ -122,28 +122,49 @@ export default async function Home({
           </h1>
           <p className="text-xs text-slate-400 mt-1">日付・試合ごとのドリルダウン閲覧ツール</p>
         </div>
-        <div className="flex items-center gap-3 mt-2 md:mt-0">
+        <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
           <Link
-            href="/left-on-base"
-            className="text-xs bg-slate-700 hover:bg-slate-600 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+            href="/standings"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
           >
-            ⚾️ 残塁数・得点 (LOB)
+            🏆 順位表
           </Link>
           <Link
-            href="/runs-allowed"
-            className="text-xs bg-slate-700 hover:bg-slate-600 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+            href="/batting"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
           >
-            ⏱️ イニング別得失点
+            ⚾️ 打撃成績
+          </Link>
+          <Link
+            href="/pitching"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
+          >
+            🎯 投手成績
+          </Link>
+          <Link
+            href="/rbi-hits"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
+          >
+            ⚡️ 適時打
           </Link>
           <Link
             href="/team-stats"
-            className="text-xs bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
           >
-            📊 チーム成績サマリー
+            📊 チーム成績
           </Link>
-          <div className="text-xs font-mono text-slate-400 bg-slate-800 px-3 py-2 rounded-md">
-            Next.js App Router × debug_base
-          </div>
+          <Link
+            href="/runs-allowed"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
+          >
+            ⏱️ 得失点
+          </Link>
+          <Link
+            href="/left-on-base"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-1 shadow-sm"
+          >
+            ⚾️ LOB
+          </Link>
         </div>
       </header>
 
