@@ -59,6 +59,37 @@ interface BattingStatsRow {
   hbp: number;
 }
 
+interface DomainHandStatsRow {
+  current_batter_name: string;
+  b_team: string;
+  pa: number;
+  ab: number;
+  hit: number;
+  ave: number;
+  r_pa: number;
+  r_ab: number;
+  r_hit: number;
+  r_ave: number;
+  r_diff: number;
+  l_pa: number;
+  l_ab: number;
+  l_hit: number;
+  l_ave: number;
+  l_diff: number;
+}
+
+interface MajorPosStatsRow {
+  sort_order: number;
+  pos_name: string;
+  batter: string;
+  pos_ab: number;
+  total_ab: number;
+  total_hit: number;
+  ave: number;
+  hr: number;
+  rbi: number;
+}
+
 const TEAMS = ["ヤ", "De", "神", "巨", "広", "中", "オ", "ロ", "ソ", "楽", "日", "西"];
 
 // 日付のフォーマット関数 (YYYYMMDD -> YYYY-MM-DD)
@@ -75,6 +106,15 @@ function formatDecimal(val: any, digits: number = 3): string {
   const num = Number(val);
   if (isNaN(num)) return "-";
   return num.toFixed(digits);
+}
+
+// 差分フォーマット用関数
+function formatDiff(val: any): string {
+  if (val === null || val === undefined) return "-";
+  const num = Number(val);
+  if (isNaN(num)) return "-";
+  const str = num.toFixed(3);
+  return num > 0 ? `+${str}` : str;
 }
 // 直近5試合の成績を動的に取得するヘルパー関数
 async function fetchTeamRecentStats(teamInitial: string, selectedDate: string) {
@@ -226,6 +266,336 @@ function renderStatsTable(teamLabel: string, teamInitial: string, stats: Batting
   );
 }
 
+// 対左右投手成績を取得するヘルパー関数
+async function fetchTeamDomainHandStats(teamInitial: string, selectedDate: string) {
+  const sql = `
+    SELECT 
+      REPLACE(total.current_batter_name, ' ', '') AS current_batter_name,
+      total.b_team,
+      total.pa, total.ab, total.hit,
+      total.ave,
+      IFNULL(R.r_pa, 0) AS r_pa,
+      IFNULL(R.r_ab, 0) AS r_ab,
+      IFNULL(R.r_hit, 0) AS r_hit,
+      IFNULL(R.r_ave, 0) AS r_ave,
+      ROUND(IFNULL(R.r_ave, 0) - total.ave, 3) AS r_diff,
+      IFNULL(L.l_pa, 0) AS l_pa,
+      IFNULL(L.l_ab, 0) AS l_ab,
+      IFNULL(L.l_hit, 0) AS l_hit,
+      IFNULL(L.l_ave, 0) AS l_ave,
+      ROUND(IFNULL(L.l_ave, 0) - total.ave, 3) AS l_diff
+    FROM
+      (
+        SELECT 
+          base.current_batter_name,
+          base.b_team,
+          SUM(base.is_pa) AS pa,
+          SUM(base.is_ab) AS ab,
+          SUM(base.is_hit) AS hit,
+          ROUND(SUM(base.is_hit) / SUM(base.is_ab), 3) AS ave,
+          game.game_cnt
+        FROM
+          debug_base base
+        LEFT JOIN (
+          SELECT 
+            tm.team_initial_kana AS team_initial,
+            IFNULL(away.game_cnt, 0) + IFNULL(home.game_cnt, 0) AS game_cnt
+          FROM
+            team_master tm
+          LEFT JOIN (
+            SELECT 
+              away_team_initial AS team_initial,
+              COUNT(away_team_initial) AS game_cnt
+            FROM
+              game_info
+            WHERE
+              no_game = 0
+              AND is_rg = 1
+              AND date <= ?
+            GROUP BY away_team_initial
+          ) AS away ON away.team_initial = tm.team_initial_kana
+          LEFT JOIN (
+            SELECT 
+              home_team_initial AS team_initial,
+              COUNT(home_team_initial) AS game_cnt
+            FROM
+              game_info
+            WHERE
+              no_game = 0
+              AND is_rg = 1
+              AND date <= ?
+            GROUP BY home_team_initial
+          ) AS home ON home.team_initial = tm.team_initial_kana
+        ) game ON game.team_initial = base.b_team
+        WHERE
+          CHAR_LENGTH(base.current_batter_name) > 0
+          AND base.date <= ?
+        GROUP BY base.current_batter_name, base.b_team
+        HAVING pa >= 2 * IFNULL(game.game_cnt, 0)
+      ) AS total
+      LEFT JOIN (
+        SELECT 
+          current_batter_name,
+          b_team,
+          SUM(is_pa) AS r_pa,
+          SUM(is_ab) AS r_ab,
+          SUM(is_hit) AS r_hit,
+          ROUND(SUM(is_hit) / SUM(is_ab), 3) AS r_ave
+        FROM
+          debug_base base
+        WHERE
+          CHAR_LENGTH(current_batter_name) > 0
+          AND current_pitcher_domain_hand = '右投'
+          AND date <= ?
+        GROUP BY current_batter_name, b_team
+      ) AS R ON R.current_batter_name = total.current_batter_name AND R.b_team = total.b_team
+      LEFT JOIN (
+        SELECT 
+          current_batter_name,
+          b_team,
+          SUM(is_pa) AS l_pa,
+          SUM(is_ab) AS l_ab,
+          SUM(is_hit) AS l_hit,
+          ROUND(SUM(is_hit) / SUM(is_ab), 3) AS l_ave
+        FROM
+          debug_base base
+        WHERE
+          CHAR_LENGTH(current_batter_name) > 0
+          AND current_pitcher_domain_hand = '左投'
+          AND date <= ?
+        GROUP BY current_batter_name, b_team
+      ) AS L ON L.current_batter_name = total.current_batter_name AND L.b_team = total.b_team
+    WHERE total.b_team = ?
+    ORDER BY ave DESC
+  `;
+  const params = [selectedDate, selectedDate, selectedDate, selectedDate, selectedDate, teamInitial];
+  return await query<DomainHandStatsRow[]>(sql, params);
+}
+
+// 対左右成績テーブル描画ヘルパー関数
+function renderDomainHandTable(teamLabel: string, teamInitial: string, stats: DomainHandStatsRow[]) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 font-medium">
+        <div className="font-bold text-slate-700 text-sm">
+          {teamLabel}: {teamInitial} 球団 (対左右投手 打撃成績)
+        </div>
+        <div className="text-xs text-slate-400">規定: 試合数 × 2 打席以上</div>
+      </div>
+      
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+        <table className="w-full text-left text-xs border-collapse relative">
+          <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm">
+            <tr className="border-b border-slate-100 font-bold text-slate-600 uppercase text-center">
+              <th className="p-3 text-left sticky left-0 bg-slate-50 z-20 min-w-[100px]" rowSpan={2}>打者</th>
+              <th className="p-2 border-b border-r border-slate-200 bg-slate-100/70" colSpan={4}>通算</th>
+              <th className="p-2 border-b border-r border-slate-200 bg-amber-50/70 text-amber-900" colSpan={5}>対右投手</th>
+              <th className="p-2 border-b border-slate-200 bg-emerald-50/70 text-emerald-900" colSpan={5}>対左投手</th>
+            </tr>
+            <tr className="border-b border-slate-100 font-bold text-slate-600 uppercase text-center text-[11px]">
+              {/* 通算 */}
+              <th className="p-2 min-w-[50px] bg-slate-50">打席</th>
+              <th className="p-2 min-w-[50px] bg-slate-50">打数</th>
+              <th className="p-2 min-w-[50px] bg-slate-50">安打</th>
+              <th className="p-2 min-w-[60px] bg-slate-50 border-r border-slate-200">打率</th>
+              {/* 対右 */}
+              <th className="p-2 min-w-[50px] bg-amber-50/30">打席</th>
+              <th className="p-2 min-w-[50px] bg-amber-50/30">打数</th>
+              <th className="p-2 min-w-[50px] bg-amber-50/30">安打</th>
+              <th className="p-2 min-w-[60px] bg-amber-50/30 font-bold text-amber-900">打率</th>
+              <th className="p-2 min-w-[60px] bg-amber-50/30 border-r border-slate-200">差分</th>
+              {/* 対左 */}
+              <th className="p-2 min-w-[50px] bg-emerald-50/30">打席</th>
+              <th className="p-2 min-w-[50px] bg-emerald-50/30">打数</th>
+              <th className="p-2 min-w-[50px] bg-emerald-50/30">安打</th>
+              <th className="p-2 min-w-[60px] bg-emerald-50/30 font-bold text-emerald-900">打率</th>
+              <th className="p-2 min-w-[60px] bg-emerald-50/30">差分</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-normal">
+            {stats.length === 0 ? (
+              <tr>
+                <td colSpan={15} className="text-center p-12 text-slate-400">
+                  該当選手がいません（規定打席に達している選手がいません）
+                </td>
+              </tr>
+            ) : (
+              stats.map((s, i) => (
+                <tr key={i} className="hover:bg-blue-50/20 transition-colors text-center">
+                  <td className="p-3 text-left font-semibold text-slate-800 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                    {s.current_batter_name}
+                  </td>
+                  {/* 通算 */}
+                  <td className="p-2 font-mono text-slate-600">{s.pa}</td>
+                  <td className="p-2 font-mono text-slate-600">{s.ab}</td>
+                  <td className="p-2 font-mono text-slate-600">{s.hit}</td>
+                  <td className="p-2 font-mono font-bold text-slate-800 border-r border-slate-200">
+                    {formatDecimal(s.ave)}
+                  </td>
+                  {/* 対右 */}
+                  <td className="p-2 font-mono text-slate-600 bg-amber-50/10">{s.r_pa}</td>
+                  <td className="p-2 font-mono text-slate-600 bg-amber-50/10">{s.r_ab}</td>
+                  <td className="p-2 font-mono text-slate-600 bg-amber-50/10">{s.r_hit}</td>
+                  <td className="p-2 font-mono font-bold text-amber-900 bg-amber-50/20">
+                    {formatDecimal(s.r_ave)}
+                  </td>
+                  <td className={`p-2 font-mono text-xs border-r border-slate-200 bg-amber-50/10 ${
+                    s.r_diff > 0 ? "text-red-600 font-bold" : s.r_diff < 0 ? "text-blue-600" : "text-slate-400"
+                  }`}>
+                    {formatDiff(s.r_diff)}
+                  </td>
+                  {/* 対左 */}
+                  <td className="p-2 font-mono text-slate-600 bg-emerald-50/10">{s.l_pa}</td>
+                  <td className="p-2 font-mono text-slate-600 bg-emerald-50/10">{s.l_ab}</td>
+                  <td className="p-2 font-mono text-slate-600 bg-emerald-50/10">{s.l_hit}</td>
+                  <td className="p-2 font-mono font-bold text-emerald-900 bg-emerald-50/20">
+                    {formatDecimal(s.l_ave)}
+                  </td>
+                  <td className={`p-2 font-mono text-xs bg-emerald-50/10 ${
+                    s.l_diff > 0 ? "text-red-600 font-bold" : s.l_diff < 0 ? "text-blue-600" : "text-slate-400"
+                  }`}>
+                    {formatDiff(s.l_diff)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// 主要守備位置別成績を取得するヘルパー関数
+async function fetchTeamMajorPosStats(teamInitial: string, selectedDate: string) {
+  const sql = `
+    WITH pos_list AS (
+      SELECT '捕' AS pos, '捕手' AS pos_name, 1 AS sort_order UNION ALL
+      SELECT '一', '一塁手', 2 UNION ALL
+      SELECT '二', '二塁手', 3 UNION ALL
+      SELECT '三', '三塁手', 4 UNION ALL
+      SELECT '遊', '遊撃手', 5 UNION ALL
+      SELECT '左', '左翼手', 6 UNION ALL
+      SELECT '中', '中堅手', 7 UNION ALL
+      SELECT '右', '右翼手', 8 UNION ALL
+      SELECT '指', '指名打者', 9
+    ),
+    pos_batter_ab AS (
+      SELECT
+        p.pos,
+        p.pos_name,
+        p.sort_order,
+        sb.b_team,
+        sb.name,
+        SUM(sb.ab) AS pos_ab
+      FROM pos_list p
+      JOIN stats_batter sb ON sb.position LIKE CONCAT('%', p.pos, '%')
+      JOIN game_info gi ON sb.game_info_id = gi.id
+      WHERE gi.date <= ?
+        AND gi.no_game = 0
+        AND gi.is_rg = 1
+        AND sb.b_team = ?
+      GROUP BY p.pos, p.pos_name, p.sort_order, sb.b_team, sb.name
+    ),
+    ranked_pos AS (
+      SELECT
+        pos,
+        pos_name,
+        sort_order,
+        b_team,
+        name,
+        pos_ab,
+        ROW_NUMBER() OVER (PARTITION BY pos, b_team ORDER BY pos_ab DESC, name ASC) AS rn
+      FROM pos_batter_ab
+    ),
+    top_players AS (
+      SELECT pos, pos_name, sort_order, b_team, name, pos_ab
+      FROM ranked_pos
+      WHERE rn = 1
+    )
+    SELECT
+      tp.sort_order,
+      tp.pos_name,
+      REPLACE(tp.name, ' ', '') AS batter,
+      tp.pos_ab,
+      SUM(sb.ab) AS total_ab,
+      SUM(sb.hit) AS total_hit,
+      ROUND(SUM(sb.hit) / SUM(sb.ab), 3) AS ave,
+      SUM(sb.hr) AS hr,
+      SUM(sb.rbi) AS rbi
+    FROM top_players tp
+    JOIN stats_batter sb ON sb.b_team = tp.b_team AND sb.name = tp.name
+    JOIN game_info gi ON sb.game_info_id = gi.id
+    WHERE gi.date <= ?
+      AND gi.no_game = 0
+      AND gi.is_rg = 1
+    GROUP BY tp.sort_order, tp.pos_name, tp.name, tp.pos_ab
+    ORDER BY tp.sort_order ASC
+  `;
+  return await query<MajorPosStatsRow[]>(sql, [selectedDate, teamInitial, selectedDate]);
+}
+
+// 主要守備位置別成績テーブル描画ヘルパー関数
+function renderMajorPosTable(teamLabel: string, teamInitial: string, stats: MajorPosStatsRow[]) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 font-medium">
+        <div className="font-bold text-slate-700 text-sm">
+          {teamLabel}: {teamInitial} 球団 (主要守備位置別 打撃成績)
+        </div>
+        <div className="text-xs text-slate-400">※各守備位置で最多打数の選手</div>
+      </div>
+      
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+        <table className="w-full text-left text-xs border-collapse relative">
+          <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm">
+            <tr className="border-b border-slate-100 font-bold text-slate-600 uppercase text-center">
+              <th className="p-3 text-center sticky left-0 bg-slate-50 z-20 min-w-[90px]">守備位置</th>
+              <th className="p-3 text-left min-w-[100px]">選手名</th>
+              <th className="p-3 min-w-[70px]">守備時打数</th>
+              <th className="p-3 min-w-[70px]">通算打数</th>
+              <th className="p-3 min-w-[60px]">安打</th>
+              <th className="p-3 min-w-[60px]">本塁打</th>
+              <th className="p-3 min-w-[60px]">打点</th>
+              <th className="p-3 min-w-[70px] bg-blue-50/50">打率</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-normal">
+            {stats.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="text-center p-12 text-slate-400">
+                  該当データがありません
+                </td>
+              </tr>
+            ) : (
+              stats.map((s, i) => (
+                <tr key={i} className="hover:bg-blue-50/20 transition-colors text-center">
+                  <td className="p-3 font-semibold text-slate-700 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs">
+                      {s.pos_name}
+                    </span>
+                  </td>
+                  <td className="p-3 text-left font-semibold text-slate-800">
+                    {s.batter}
+                  </td>
+                  <td className="p-3 font-mono text-slate-500">{s.pos_ab}</td>
+                  <td className="p-3 font-mono text-slate-600">{s.total_ab}</td>
+                  <td className="p-3 font-mono text-slate-600">{s.total_hit}</td>
+                  <td className="p-3 font-mono text-slate-600 font-semibold">{s.hr}</td>
+                  <td className="p-3 font-mono text-slate-600 font-semibold">{s.rbi}</td>
+                  <td className="p-3 font-mono font-bold text-blue-600 bg-blue-50/20">
+                    {formatDecimal(s.ave)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 
 
 
@@ -248,6 +618,12 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
   let homeRecentStats: BattingStatsRow[] = [];
   let awayRecentGamesCount = 0;
   let homeRecentGamesCount = 0;
+
+  let awayDomainHandStats: DomainHandStatsRow[] = [];
+  let homeDomainHandStats: DomainHandStatsRow[] = [];
+
+  let awayMajorPosStats: MajorPosStatsRow[] = [];
+  let homeMajorPosStats: MajorPosStatsRow[] = [];
 
   let dbErr: string | null = null;
 
@@ -317,6 +693,18 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
         const homeRes = await fetchTeamRecentStats(selectedGameInfo.home_team_initial, selectedGameInfo.date);
         homeRecentStats = homeRes.stats;
         homeRecentGamesCount = homeRes.count;
+      }
+
+      // タブ3: 対左右投手成績 (hand) の動的データ取得
+      if (currentTab === "hand" && selectedGameInfo) {
+        awayDomainHandStats = await fetchTeamDomainHandStats(selectedGameInfo.away_team_initial, selectedGameInfo.date);
+        homeDomainHandStats = await fetchTeamDomainHandStats(selectedGameInfo.home_team_initial, selectedGameInfo.date);
+      }
+
+      // タブ4: 主要守備位置別成績 (pos) の動的データ取得
+      if (currentTab === "pos" && selectedGameInfo) {
+        awayMajorPosStats = await fetchTeamMajorPosStats(selectedGameInfo.away_team_initial, selectedGameInfo.date);
+        homeMajorPosStats = await fetchTeamMajorPosStats(selectedGameInfo.home_team_initial, selectedGameInfo.date);
       }
     }
   } catch (err: any) {
@@ -511,6 +899,26 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
                   >
                     📈 直近5試合成績 (RC5)
                   </Link>
+                  <Link
+                    href={getUrl({ tab: "hand" })}
+                    className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${
+                      currentTab === "hand"
+                        ? "border-blue-600 text-blue-600"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    ⚾️ 対左右投手成績
+                  </Link>
+                  <Link
+                    href={getUrl({ tab: "pos" })}
+                    className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${
+                      currentTab === "pos"
+                        ? "border-blue-600 text-blue-600"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    🛡️ 主要守備位置別成績
+                  </Link>
                 </div>
 
                 {currentTab === "details" ? (
@@ -643,10 +1051,20 @@ export default async function Home({ searchParams }: { searchParams: Record<stri
                   </div>
                 </div>
                   </>
-                ) : (
+                ) : currentTab === "rc5" ? (
                   <div className="flex flex-col gap-6">
                     {renderStatsTable("AWAY", selectedGameInfo.away_team_initial, awayRecentStats, awayRecentGamesCount)}
                     {renderStatsTable("HOME", selectedGameInfo.home_team_initial, homeRecentStats, homeRecentGamesCount)}
+                  </div>
+                ) : currentTab === "hand" ? (
+                  <div className="flex flex-col gap-6">
+                    {renderDomainHandTable("AWAY", selectedGameInfo.away_team_initial, awayDomainHandStats)}
+                    {renderDomainHandTable("HOME", selectedGameInfo.home_team_initial, homeDomainHandStats)}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {renderMajorPosTable("AWAY", selectedGameInfo.away_team_initial, awayMajorPosStats)}
+                    {renderMajorPosTable("HOME", selectedGameInfo.home_team_initial, homeMajorPosStats)}
                   </div>
                 )}
                 
