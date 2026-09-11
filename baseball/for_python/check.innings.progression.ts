@@ -20,8 +20,21 @@ const datePath = path.join(BASEBALL_DATA_DIR, 'output');
 const gamePath = path.join(BASEBALL_DATA_DIR, 'output', '%s', '%s');
 const jsonPath = path.join(BASEBALL_DATA_DIR, 'output', '%s', '%s', '%s.json');
 
-// CLEAN対象となった試合の再取得コマンドリスト
+// CLEAN対象および未終了試合の再取得コマンドリスト
 const rerunCommands: string[] = [];
+
+/**
+ * 再取得コマンドを追加（重複防止）
+ */
+const addRerunCommand = (dateStr: string, targetGameNo: string) => {
+  const mmdd = dateStr.slice(4);
+  const gameNoNum = Number(targetGameNo);
+  const rerunCmd = `docker compose exec py python3 game_scenes.py --date ${mmdd} -s ${gameNoNum}`;
+  if (!rerunCommands.includes(rerunCmd)) {
+    rerunCommands.push(rerunCmd);
+  }
+  return rerunCmd;
+};
 
 /**
  * 1シーンごとの試合データ取得
@@ -73,10 +86,7 @@ const deleteScenes = (dateStr: string, targetGameNo: string, fromScene: number, 
   }
   console.log(`[CLEAN] date: ${dateStr}, gameNo: ${targetGameNo} - deleted ${deletedCount} files (scene ${fromScene} to ${toScene}).`);
 
-  const mmdd = dateStr.slice(4);
-  const gameNoNum = Number(targetGameNo);
-  const rerunCmd = `docker compose exec py python3 game_scenes.py --date ${mmdd} -s ${gameNoNum}`;
-  rerunCommands.push(rerunCmd);
+  const rerunCmd = addRerunCommand(dateStr, targetGameNo);
   console.log(`[RERUN CMD] ${rerunCmd}`);
 };
 
@@ -211,8 +221,12 @@ const doCheck = async (gameNo: number, dateStr: string) => {
   const lastInning = lastJson?.liveHeader ? lastJson.liveHeader.inning : '';
   const isFinished = ['試合終了', '試合中止', 'ノーゲーム', 'コールド'].some(term => lastInning.includes(term));
 
-  if (!isFinished && !hasError) {
-    console.warn(`[WARN] date: ${dateStr}, gameNo: ${targetGameNo} - 試合が終了していません: ${lastInning}`);
+  if (!isFinished) {
+    if (!hasError) {
+      console.warn(`[WARN] date: ${dateStr}, gameNo: ${targetGameNo} - 試合が終了していません: ${lastInning}`);
+      const rerunCmd = addRerunCommand(dateStr, targetGameNo);
+      console.log(`[RERUN CMD (未終了)] ${rerunCmd}`);
+    }
   } else if (!hasError) {
     console.log(`[OK] date: ${dateStr}, gameNo: ${targetGameNo} - progression complete.`);
   }
