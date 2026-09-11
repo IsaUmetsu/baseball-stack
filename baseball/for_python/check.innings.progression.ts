@@ -20,7 +20,7 @@ const datePath = path.join(BASEBALL_DATA_DIR, 'output');
 const gamePath = path.join(BASEBALL_DATA_DIR, 'output', '%s', '%s');
 const jsonPath = path.join(BASEBALL_DATA_DIR, 'output', '%s', '%s', '%s.json');
 
-// CLEAN対象および未終了試合の再取得コマンドリスト
+// エラー・未終了・CLEAN対象となった試合の再取得コマンドリスト
 const rerunCommands: string[] = [];
 
 /**
@@ -63,7 +63,7 @@ const inningToIndex = (inning: string): number => {
   return (inningNum - 1) * 2 + (isUra ? 1 : 0);
 };
 
-const MULTI_OUT_REGEX = /併殺|三重殺|ゲッツー|タッチアウト|戻れず|盗塁失敗/;
+const MULTI_OUT_REGEX = /併殺|三重殺|ゲッツー|タッチアウト|戻れず|盗塁失敗|守備妨害/;
 
 /**
  * 複数アウト（併殺・三重殺・走塁死等）に該当するプレーかを判定する
@@ -73,7 +73,7 @@ const isDoubleOrTriplePlay = (battingResult = '', pitchingResult = ''): boolean 
 };
 
 /**
- * 不整合発生シーン以降のJSONファイルを削除し、再取得コマンドを記録する
+ * 不整合発生シーン以降のJSONファイルを削除する
  */
 const deleteScenes = (dateStr: string, targetGameNo: string, fromScene: number, toScene: number) => {
   let deletedCount = 0;
@@ -85,9 +85,6 @@ const deleteScenes = (dateStr: string, targetGameNo: string, fromScene: number, 
     }
   }
   console.log(`[CLEAN] date: ${dateStr}, gameNo: ${targetGameNo} - deleted ${deletedCount} files (scene ${fromScene} to ${toScene}).`);
-
-  const rerunCmd = addRerunCommand(dateStr, targetGameNo);
-  console.log(`[RERUN CMD] ${rerunCmd}`);
 };
 
 const doCheck = async (gameNo: number, dateStr: string) => {
@@ -210,6 +207,12 @@ const doCheck = async (gameNo: number, dateStr: string) => {
     prevInningIdx = currentInningIdx;
     prevInningStr = currentInningStr;
     prevOutCount = currentOutCount;
+  }
+
+  // エラーが検知された試合は再取得対象に登録
+  if (hasError) {
+    const rerunCmd = addRerunCommand(dateStr, targetGameNo);
+    console.log(`[RERUN CMD (エラー検知)] ${rerunCmd}`);
   }
 
   // CLEAN指定があり、不整合が検知されていた場合は削除を実行
