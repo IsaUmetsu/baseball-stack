@@ -1,75 +1,70 @@
-from dataclasses import dataclass, field
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
 
 @dataclass(frozen=True)
-class PitcherStats:
-    result: Optional[str]
-    name: str
-    era: str
-    ip: str
-    np: str
-    bf: str
-    ha: str
-    hra: str
-    so: str
-    bb: str
-    hbp: str
-    balk: str
-    ra: str
-    er: str
+class PitcherStatsData:
+    away_team: str
+    away_stats: List[Dict[str, str]]
+    home_team: str
+    home_stats: List[Dict[str, str]]
+    is_finished: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "away": {
+                "team": self.away_team,
+                "stats": self.away_stats,
+            },
+            "home": {
+                "team": self.home_team,
+                "stats": self.home_stats,
+            },
+            "isFinished": self.is_finished,
+        }
+
 
 @dataclass(frozen=True)
-class BatterStats:
-    position: str
-    name: str
-    avg: str
-    at_bat: str
-    runs: str
-    hits: str
-    rbi: str
-    so: str
-    bb: str
-    hbp: str
-    sh: str
-    sb: str
-    errors: str
-    hr: str
-    innings: List[str]
+class BatterStatsData:
+    away_team: str
+    away_stats: List[Dict[str, str]]
+    away_score_board: Dict[str, str]
+    home_team: str
+    home_stats: List[Dict[str, str]]
+    home_score_board: Dict[str, str]
+    is_finished: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "away": {
+                "team": self.away_team,
+                "stats": self.away_stats,
+                "scoreBoard": self.away_score_board,
+            },
+            "home": {
+                "team": self.home_team,
+                "stats": self.home_stats,
+                "scoreBoard": self.home_score_board,
+            },
+            "isFinished": self.is_finished,
+        }
+
 
 @dataclass(frozen=True)
-class ScoreBoard:
-    team: str
-    runs_per_inning: List[str]
-    total_runs: str
-    total_hits: str
-    total_errors: str
-
-@dataclass(frozen=True)
-class TextSummary:
+class TextPlayItem:
     inning: str
     team: str
-    play_number: str
+    no: str
     order: str
     batter: str
     detail: str
 
-@dataclass(frozen=True)
-class TeamPitcherStats:
-    team: str
-    stats: List[PitcherStats] = field(default_factory=list)
-
-@dataclass(frozen=True)
-class TeamBatterStats:
-    team: str
-    stats: List[BatterStats] = field(default_factory=list)
-
-@dataclass(frozen=True)
-class GameStats:
-    game_id: str
-    is_finished: bool
-    home_pitcher: TeamPitcherStats
-    away_pitcher: TeamPitcherStats
-    home_batter: TeamBatterStats
-    away_batter: TeamBatterStats
-    text_summary: List[TextSummary] = field(default_factory=list)
-    scoreboard: List[ScoreBoard] = field(default_factory=list)
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "inning": self.inning,
+            "team": self.team,
+            "no": self.no,
+            "order": self.order,
+            "batter": self.batter,
+            "detail": self.detail,
+        }
