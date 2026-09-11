@@ -19,6 +19,9 @@ from src.infrastructure.scraper.scene_selectors import (
 SELECTORS = {
     "gameCards": "#gm_card .bb-score__content",
     "startTime": "#gm_brd .bb-gameCard .bb-gameDescription time",
+    "gameState": ".bb-gameCard__state",
+    "gameDetailTeams": "#async-gameDetail .bb-gameTeam .bb-gameTeam__name",
+    "gameDetailAttacks": "#async-gameTeamAttack p",
     "gmRecen": "#gm_recen",
     "awayTeam": "#gm_recen .bb-gameCard__readMore .bb-gameCard__readMoreItem:nth-child(2) span",
     "homeTeam": "#gm_recen .bb-gameCard__readMore .bb-gameCard__readMoreItem:nth-child(1) span",
@@ -81,6 +84,13 @@ class SeleniumStarterScraper:
         self._driver.get(top_url)
         time.sleep(1)
 
+        # 試合中止等の状態判定
+        state_elems = self._driver.find_elements(By.CSS_SELECTOR, SELECTORS["gameState"])
+        state_text = state_elems[0].text.strip() if state_elems else ""
+
+        if "中止" in state_text:
+            return self._extract_cancelled_game()
+
         start_time = ""
         try:
             start_time_elem = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["startTime"])
@@ -114,22 +124,45 @@ class SeleniumStarterScraper:
             )
 
         except NoSuchElementException:
-            try:
-                title_elem = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["gameTitleSpan"])
-                title_text = title_elem.get_attribute("textContent") or ""
-                teams = title_text.split(" vs. ")
-                if len(teams) >= 2:
-                    home = get_team_initial(teams[0].strip())
-                    away = get_team_initial(teams[1].strip())
-                    return StarterInfo(
-                        start=start_time,
-                        away=TeamStarter(team=away, pitcher=None),
-                        home=TeamStarter(team=home, pitcher=None),
-                    )
+            # 万が一状態判定をすり抜けた場合の中止フォールバック
+            return self._extract_cancelled_game()
+
+    def _extract_cancelled_game(self) -> Optional[StarterInfo]:
+        try:
+            away, home = "", ""
+            team_elems = self._driver.find_elements(By.CSS_SELECTOR, SELECTORS["gameDetailTeams"])
+            attack_elems = self._driver.find_elements(By.CSS_SELECTOR, SELECTORS["gameDetailAttacks"])
+
+            if len(team_elems) >= 2:
+                team1 = get_team_initial(team_elems[0].text.strip())
+                team2 = get_team_initial(team_elems[1].text.strip())
+                if attack_elems and "後攻" in attack_elems[0].text:
+                    home, away = team1, team2
                 else:
-                    print(f"[WARN] Unable to split title for cancelled game: {title_text}")
-                    return None
-            except Exception as e:
-                print(f"[ERROR] Failed to parse cancelled game: {e}")
+                    away, home = team1, team2
+            else:
+                title = self._driver.title
+                match = re.search(r'([^\s]+)vs\.([^\s\-]+)', title)
+                if match:
+                    home = get_team_initial(match.group(1).strip())
+                    away = get_team_initial(match.group(2).strip())
+                else:
+                    title_elem = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["gameTitleSpan"])
+                    title_text = title_elem.get_attribute("textContent") or ""
+                    teams = title_text.split(" vs. ")
+                    if len(teams) >= 2:
+                        home = get_team_initial(teams[0].strip())
+                        away = get_team_initial(teams[1].strip())
+
+            if not away and not home:
                 return None
+
+            return StarterInfo(
+                start="試合中止",
+                away=TeamStarter(team=away, pitcher=None),
+                home=TeamStarter(team=home, pitcher=None),
+            )
+        except Exception as e:
+            print(f"[ERROR] Failed to parse cancelled game: {e}")
+            return None
 
