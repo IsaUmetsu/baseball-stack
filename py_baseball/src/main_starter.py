@@ -1,9 +1,9 @@
 import argparse
 import datetime
+import os
 import re
 import sys
 import traceback
-import os
 
 # Add src directory to Python path to allow absolute imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -12,6 +12,7 @@ from src.application.use_cases.collect_starters import CollectStartersUseCase
 from src.infrastructure.persistence.json_starter_repository import JsonStarterRepository
 from src.infrastructure.scraper.driver_factory import get_webdriver
 from src.infrastructure.scraper.starter_scraper import SeleniumStarterScraper
+
 
 def parse_date(date_str: str) -> datetime.date:
     cleaned = re.sub(r'\D', '', date_str)
@@ -23,13 +24,14 @@ def parse_date(date_str: str) -> datetime.date:
     else:
         raise ValueError(f"Invalid date format: {date_str}. Please use MMDD or YYYYMMDD.")
 
+
 def main():
     parser = argparse.ArgumentParser(description="Baseball Starter Announce Collector using DDD architecture.")
     parser.add_argument('-d', '--date', type=str, default=None, help="Specify a single date (MMDD or YYYYMMDD).")
     parser.add_argument('-ss', '--season-start', type=str, default=datetime.date.today().strftime("%m%d"), help="Start date (MMDD or YYYYMMDD).")
     parser.add_argument('-se', '--season-end', type=str, default=datetime.date.today().strftime("%m%d"), help="End date (MMDD or YYYYMMDD).")
-    parser.add_argument('-s', '--specify', nargs='+', type=int, help="Specify game numbers to process (integers).")
-    parser.add_argument('-e', '--exclude', nargs='+', type=int, help="Exclude game numbers from processing (integers).")
+    parser.add_argument('-s', '--specify', nargs='+', type=str, help="Specify game numbers to process.")
+    parser.add_argument('-e', '--exclude', nargs='+', type=str, help="Exclude game numbers from processing.")
     parser.add_argument('--browser', type=str, default="firefox", choices=["firefox", "chrome"], help="Browser to use for scraping.")
 
     args = parser.parse_args()
@@ -41,38 +43,35 @@ def main():
             start_date = parse_date(args.season_start)
             end_date = parse_date(args.season_end)
 
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        starter_path = os.path.join(project_root, "starter")
+        base_dir = os.environ.get("PY_BASEBALL_DATA_DIR", "/Users/IsamuUmetsu/dev/py_baseball")
+        starter_path = os.path.join(base_dir, "starter")
 
         with get_webdriver(browser=args.browser) as driver:
             # 1. Initialize Infrastructure components
             scraper = SeleniumStarterScraper(driver)
-            repository = JsonStarterRepository(
-                base_path=starter_path
-            )
+            repository = JsonStarterRepository(base_path=starter_path)
 
-            # 2. Initialize Application Use Case (scraper, repository の順で渡す)
+            # 2. Initialize Application Use Case
             use_case = CollectStartersUseCase(
-                scraper=scraper,
-                repository=repository,
+                starter_repository=repository,
+                starter_scraper=scraper,
             )
 
-            # 3. 日付範囲をループして execute を呼び出し
-            current_date = start_date
-            while current_date <= end_date:
-                use_case.execute(
-                    target_date=current_date,
-                    specify_games=args.specify,
-                    exclude_games=args.exclude,
-                )
-                current_date += datetime.timedelta(days=1)
+            # 3. Execute the Use Case
+            use_case.execute(
+                start_date=start_date,
+                end_date=end_date,
+                specify=args.specify,
+                exclude=args.exclude,
+            )
 
-    except Exception as e:
+    except Exception:
         print("An unexpected error occurred:")
         traceback.print_exc()
         sys.exit(1)
 
-    print("\n--- Main process finished successfully ---")
+    print("\n--- Starter collection finished successfully ---")
+
 
 if __name__ == "__main__":
     main()

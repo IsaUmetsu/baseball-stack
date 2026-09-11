@@ -1,9 +1,10 @@
-
 from abc import ABC, abstractmethod
-from datetime import date
-from src.domain.models.starter import StarterGameStats
+from src.domain.models.starter import StarterInfo
+
 
 class StarterRepository(ABC):
     @abstractmethod
-    def save(self, game_stats: StarterGameStats, game_date: date, game_no: int):
+    def save(self, starter_info: StarterInfo, date_str: str, file_name: str) -> None:
+        """Saves the starter information."""
         raise NotImplementedError
+

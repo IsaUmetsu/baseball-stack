@@ -1,54 +1,76 @@
-
+import datetime
 import time
-from datetime import date, timedelta
+import traceback
 from typing import List, Optional
+
 from src.domain.repositories.starter_repository import StarterRepository
 from src.infrastructure.scraper.starter_scraper import SeleniumStarterScraper
 
+
 class CollectStartersUseCase:
-    def __init__(self, scraper: SeleniumStarterScraper, repository: StarterRepository):
-        self._scraper = scraper
-        self._repository = repository
+    def __init__(
+        self,
+        starter_repository: StarterRepository,
+        starter_scraper: SeleniumStarterScraper,
+    ):
+        self._repository = starter_repository
+        self._scraper = starter_scraper
 
     def execute(
         self,
-        target_date: date,
-        specify_games: Optional[List[int]] = None,
-        exclude_games: Optional[List[int]] = None
+        start_date: datetime.date,
+        end_date: datetime.date,
+        specify: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ):
-        print(f"----- Processing date: {target_date.strftime('%Y-%m-%d')} -----")
-        
-        try:
-            game_nos = self._scraper.get_game_nos(target_date)
-            if not game_nos:
-                print(f"No games found for date: {target_date.strftime('%Y-%m-%d')}")
-                return
-        except Exception as e:
-            print(f"Error fetching game numbers for {target_date.strftime('%Y-%m-%d')}: {e}")
-            return
-
-        for idx, game_no_str in enumerate(game_nos):
-            game_idx = idx + 1
-
-            if specify_games and game_idx not in specify_games:
-                continue
-            if exclude_games and game_idx in exclude_games:
-                continue
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime("%Y%m%d")
+            print(f"--- Processing date: {current_date.strftime('%Y-%m-%d')} ---")
 
             try:
-                # 1秒待機
-                time.sleep(1)
-
-                game_stats = self._scraper.scrape_game_starter(game_no_str, target_date)
-                
-                if game_stats:
-                    self._repository.save(game_stats, target_date, game_idx)
-                    print(f"[SUCCESS] Saved starter for {target_date.strftime('%Y%m%d')}-{game_idx:02d}: {game_stats.away.team} vs {game_stats.home.team}")
-                else:
-                    print(f"[INFO] No starter info found for {target_date.strftime('%Y%m%d')}-{game_idx:02d}")
-
+                game_nos = self._scraper.get_game_nos(current_date)
+                if not game_nos:
+                    print(f"No games found for date: {current_date.strftime('%Y-%m-%d')}")
+                    current_date += datetime.timedelta(days=1)
+                    continue
             except Exception as e:
-                import traceback
-                print(f"[ERROR] Failed to process game {target_date.strftime('%Y%m%d')}-{game_idx:02d}")
-                traceback.print_exc()
+                print(f"Error fetching game numbers for {current_date.strftime('%Y-%m-%d')}: {e}")
+                current_date += datetime.timedelta(days=1)
+                continue
+
+            for idx, game_no_str in enumerate(game_nos):
+                game_seq = str(idx + 1)
+                file_name = f"{idx + 1:02d}.json"
+
+                if specify and game_seq not in specify:
+                    print(f"  [SKIP] Game {game_no_str} (index: {game_seq}) is not in the specify list.")
+                    continue
+                if exclude and game_seq in exclude:
+                    print(f"  [SKIP] Game {game_no_str} (index: {game_seq}) is in the exclude list.")
+                    continue
+
+                try:
+                    time.sleep(1)
+                    starter_info = self._scraper.scrape_game_starter(game_no_str, current_date)
+
+                    if starter_info:
+                        self._repository.save(starter_info, date_str=date_str, file_name=file_name)
+                        print(
+                            f"  [DONE] Saved starter for {date_str}-{file_name}: "
+                            f"{starter_info.away.team} vs {starter_info.home.team}"
+                        )
+                    else:
+                        print(f"  [WARN] No starter info found for {date_str}-{file_name}")
+
+                except Exception:
+                    print(f"  [ERROR] Failed to process game {date_str}-{file_name}:")
+                    traceback.print_exc()
+                    continue
+
+            current_date += datetime.timedelta(days=1)
+
+        print("\nStarter collection process finished.")
+
 
