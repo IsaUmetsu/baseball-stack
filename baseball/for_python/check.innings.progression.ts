@@ -87,14 +87,94 @@ const deleteScenes = (dateStr: string, targetGameNo: string, fromScene: number, 
   console.log(`[CLEAN] date: ${dateStr}, gameNo: ${targetGameNo} - deleted ${deletedCount} files (scene ${fromScene} to ${toScene}).`);
 };
 
+/**
+ * 重複ファイルを削除し、後続のファイルを1つ手前にずらして連番を修復する
+ */
+const removeDuplicateAndRenumber = (dateStr: string, targetGameNo: string, duplicateSceneNo: number, totalSceneCnt: number) => {
+  const dupFilePath = format(jsonPath, dateStr, targetGameNo, duplicateSceneNo);
+  if (fs.existsSync(dupFilePath)) {
+    fs.unlinkSync(dupFilePath);
+  }
+
+  for (let s = duplicateSceneNo + 1; s <= totalSceneCnt; s++) {
+    const oldPath = format(jsonPath, dateStr, targetGameNo, s);
+    const newPath = format(jsonPath, dateStr, targetGameNo, s - 1);
+    if (fs.existsSync(oldPath)) {
+      fs.renameSync(oldPath, newPath);
+    }
+  }
+  console.log(`[CLEAN DUP] date: ${dateStr}, gameNo: ${targetGameNo} - deleted duplicate scene ${duplicateSceneNo}, renumbered ${duplicateSceneNo + 1}..${totalSceneCnt} -> ${duplicateSceneNo}..${totalSceneCnt - 1}`);
+};
+
+/**
+ * 試合ごとのチェック処理
+ */
 const doCheck = async (gameNo: number, dateStr: string) => {
   const targetGameNo = format('0%d', gameNo);
   const existGameDir = await checkGameDir(datePath, dateStr, targetGameNo);
   if (!existGameDir) return;
 
-  const sceneCnt = await countFiles(format(gamePath, dateStr, targetGameNo));
+  let sceneCnt = await countFiles(format(gamePath, dateStr, targetGameNo));
   if (sceneCnt === 0) return;
 
+  // ==========================================
+  // フェーズ 1: 重複シーンの検知＆自動連番修復
+  // ==========================================
+  const recentScenes: { sceneNo: number; data: OutputJson }[] = [];
+
+  for (let sceneNo = startSceneCnt; sceneNo <= sceneCnt; sceneNo++) {
+    const data = await getData(sceneNo, dateStr, targetGameNo);
+    const { liveBody } = data;
+    const battingResult = liveBody?.battingResult || '';
+    const pitchingResult = liveBody?.pitchingResult || '';
+    const currentBatter = liveBody?.currentBatterInfo?.name;
+
+    let isDuplicate = false;
+    let matchedPrevSceneNo = -1;
+
+    if (liveBody && (battingResult || pitchingResult) && currentBatter) {
+      for (let offset = 1; offset <= 3; offset++) {
+        const prevEntry = recentScenes[recentScenes.length - offset];
+        if (!prevEntry) continue;
+
+        const prevLiveBody = prevEntry.data.liveBody;
+        const prevBatter = prevLiveBody?.currentBatterInfo?.name;
+
+        if (
+          prevBatter &&
+          currentBatter === prevBatter &&
+          battingResult === (prevLiveBody?.battingResult || '') &&
+          pitchingResult === (prevLiveBody?.pitchingResult || '')
+        ) {
+          isDuplicate = true;
+          matchedPrevSceneNo = prevEntry.sceneNo;
+          break;
+        }
+      }
+    }
+
+    if (isDuplicate) {
+      if (isCleanMode) {
+        // 重複ファイルを削除し、以降の全ファイルを繰り下げリネーム
+        removeDuplicateAndRenumber(dateStr, targetGameNo, sceneNo, sceneCnt);
+        sceneCnt--;
+        sceneNo--; // リネームされたファイル（元sceneNo+1）を次回同じsceneNoで再度検査
+        continue;
+      } else {
+        console.error(`[ERROR DUP] date: ${dateStr}, gameNo: ${targetGameNo}, sceneNo: ${sceneNo} - 重複シーン検知 (scene ${matchedPrevSceneNo} と完全一致)`);
+        addRerunCommand(dateStr, targetGameNo);
+      }
+    }
+
+    recentScenes.push({ sceneNo, data });
+    if (recentScenes.length > 4) {
+      recentScenes.shift();
+    }
+  }
+
+  // ==========================================
+  // フェーズ 2: イニング／アウトカウント整合性チェック
+  // ==========================================
   let hasError = false;
   let firstDeleteFromScene: number | null = null;
 
@@ -167,7 +247,6 @@ const doCheck = async (gameNo: number, dateStr: string) => {
       if (prevOutCount !== 3) {
         console.error(`[ERROR] date: ${dateStr}, gameNo: ${targetGameNo}, sceneNo: ${sceneNo} - 前イニングが3アウト未満でチェンジしました: ${prevInningStr} (${prevOutCount}アウト) -> ${currentInningStr}`);
         hasError = true;
-        // 不整合が発生した前イニングの先頭シーン以降を削除対象とする
         if (firstDeleteFromScene === null) firstDeleteFromScene = currentInningFirstScene;
       }
       currentInningFirstScene = sceneNo;
@@ -215,7 +294,7 @@ const doCheck = async (gameNo: number, dateStr: string) => {
     console.log(`[RERUN CMD (エラー検知)] ${rerunCmd}`);
   }
 
-  // CLEAN指定があり、不整合が検知されていた場合は削除を実行
+  // CLEAN指定があり、真の不整合が検知されていた場合は削除を実行
   if (isCleanMode && firstDeleteFromScene !== null) {
     deleteScenes(dateStr, targetGameNo, firstDeleteFromScene, sceneCnt);
   }
