@@ -18,7 +18,7 @@ from src.infrastructure.scraper.scene_selectors import (
 
 SELECTORS = {
     "gameCards": "#gm_card .bb-score__content",
-    "startTime": "#gm_brd .bb-gameCard .bb-gameDescription time",
+    "startTime": "#gm_brd .bb-gameDescription time",
     "gameState": ".bb-gameCard__state",
     "gameDetailTeams": "#async-gameDetail .bb-gameTeam .bb-gameTeam__name",
     "gameDetailAttacks": "#async-gameTeamAttack p",
