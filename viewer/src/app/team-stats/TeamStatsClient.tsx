@@ -207,11 +207,25 @@ const handleSearch = (e: React.FormEvent) => {
             リーグ・特定期間におけるチーム全体の打撃・投手・先発・救援の統合ダッシュボード
           </p>
         </div>
-        <div className="text-xs font-mono text-slate-400 bg-slate-800 px-3 py-1.5 rounded-md mt-2 md:mt-0 flex items-center gap-2">
-          {isPending && (
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-          )}
-          Next.js App Router × SpreadSheet View
+        <div className="flex items-center gap-3 mt-2 md:mt-0">
+          <Link
+            href="/left-on-base"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-3 py-1.5 rounded-md transition duration-150 flex items-center gap-1"
+          >
+            ⚾️ 残塁数・得点 (LOB)
+          </Link>
+          <Link
+            href="/runs-allowed"
+            className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-3 py-1.5 rounded-md transition duration-150 flex items-center gap-1"
+          >
+            ⏱️ イニング別得失点
+          </Link>
+          <div className="text-xs font-mono text-slate-400 bg-slate-800 px-3 py-1.5 rounded-md flex items-center gap-2">
+            {isPending && (
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+            )}
+            Next.js App Router × SpreadSheet View
+          </div>
         </div>
       </header>
 

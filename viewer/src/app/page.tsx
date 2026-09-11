@@ -124,6 +124,18 @@ export default async function Home({
         </div>
         <div className="flex items-center gap-3 mt-2 md:mt-0">
           <Link
+            href="/left-on-base"
+            className="text-xs bg-slate-700 hover:bg-slate-600 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+          >
+            ⚾️ 残塁数・得点 (LOB)
+          </Link>
+          <Link
+            href="/runs-allowed"
+            className="text-xs bg-slate-700 hover:bg-slate-600 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
+          >
+            ⏱️ イニング別得失点
+          </Link>
+          <Link
             href="/team-stats"
             className="text-xs bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white font-bold px-3 py-2 rounded-md transition-all duration-200 flex items-center gap-1.5 shadow-sm"
           >
