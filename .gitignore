@@ -30,6 +30,7 @@ baseball/for_python/tweet/twitter.ts
 baseball/for_python/query/createQuery.ts
 baseball/for_python/lineconfig.json
 baseball/gen_query.sql
+baseball/rerun*.sh
 
 # --- py_baseball project ---
 py_baseball/__pycache__/
