@@ -67,8 +67,11 @@ export async function fetchStandings(params: StandingsQueryParams = {}): Promise
         away_score AS runs_scored,
         home_score AS runs_allowed,
         date
-      FROM debug_base
-      ${subFilter}
+      FROM (
+        SELECT DISTINCT g_id, away_initial, home_initial, away_score, home_score, date
+        FROM debug_base
+        ${subFilter}
+      ) d_away
       UNION ALL
       SELECT
         home_initial AS team,
@@ -80,8 +83,11 @@ export async function fetchStandings(params: StandingsQueryParams = {}): Promise
         home_score AS runs_scored,
         away_score AS runs_allowed,
         date
-      FROM debug_base
-      ${subFilter}
+      FROM (
+        SELECT DISTINCT g_id, away_initial, home_initial, away_score, home_score, date
+        FROM debug_base
+        ${subFilter}
+      ) d_home
     ) g ON tm.team_initial_kana = g.team
     GROUP BY tm.team_name, tm.team_initial_kana, tm.team_initial, tm.league
     ORDER BY tm.league, win_rate DESC, wins DESC, run_diff DESC;
@@ -126,3 +132,4 @@ export async function fetchStandings(params: StandingsQueryParams = {}): Promise
 
   return formatted;
 }
+
