@@ -1,24 +1,26 @@
 import { query } from "@/lib/db";
 import { BatterLeaderRow, TeamBattingRow, BattingQueryParams } from "./types";
 
-function buildDateWhereClause(params: BattingQueryParams): { whereClause: string; values: any[] } {
+function buildDateWhereClause(params: BattingQueryParams, alias = "gi"): { whereClause: string; values: any[] } {
   const { periodType, month, dow } = params;
   if (periodType === "month" && month !== undefined) {
-    return { whereClause: "WHERE MONTH(gi.date) = ?", values: [month] };
+    return { whereClause: `WHERE MONTH(${alias}.date) = ?`, values: [month] };
   }
   if (periodType === "dow" && dow !== undefined) {
-    return { whereClause: "WHERE DAYOFWEEK(gi.date) = ?", values: [dow] };
+    return { whereClause: `WHERE DAYOFWEEK(${alias}.date) = ?`, values: [dow] };
   }
   return { whereClause: "", values: [] };
 }
 
 export async function fetchBatterLeaders(params: BattingQueryParams, limit = 25): Promise<BatterLeaderRow[]> {
-  const { whereClause, values } = buildDateWhereClause(params);
-  let leagueFilter = "";
-  const queryValues = [...values];
+  const subDate = buildDateWhereClause(params, "gi_sub");
+  const mainDate = buildDateWhereClause(params, "gi");
+
+  const queryValues = [...subDate.values, ...mainDate.values];
+  let mainWhere = mainDate.whereClause;
 
   if (params.league && params.league !== "ALL") {
-    leagueFilter = whereClause ? " AND tm.league = ?" : "WHERE tm.league = ?";
+    mainWhere = mainWhere ? `${mainWhere} AND tm.league = ?` : "WHERE tm.league = ?";
     queryValues.push(params.league);
   }
 
@@ -29,6 +31,7 @@ export async function fetchBatterLeaders(params: BattingQueryParams, limit = 25)
       sb.b_team AS team_initial_kana,
       tm.league,
       COUNT(DISTINCT gi.date) AS games,
+      SUM(sb.ab + sb.bb + sb.hbp + sb.sh + sb.is_sf) AS pa,
       SUM(sb.ab) AS ab,
       SUM(sb.hit) AS hit,
       SUM(sb.hr) AS hr,
@@ -40,9 +43,18 @@ export async function fetchBatterLeaders(params: BattingQueryParams, limit = 25)
     FROM stats_batter sb
     JOIN game_info gi ON sb.game_info_id = gi.id
     JOIN team_master tm ON sb.b_team = tm.team_initial_kana
-    ${whereClause} ${leagueFilter}
-    GROUP BY sb.name, tm.team_name, sb.b_team, tm.league
-    HAVING ab >= 5
+    JOIN (
+      SELECT 
+        sb_sub.b_team,
+        COUNT(DISTINCT sb_sub.game_info_id) AS team_games
+      FROM stats_batter sb_sub
+      JOIN game_info gi_sub ON sb_sub.game_info_id = gi_sub.id
+      ${subDate.whereClause}
+      GROUP BY sb_sub.b_team
+    ) tg ON sb.b_team = tg.b_team
+    ${mainWhere}
+    GROUP BY sb.name, tm.team_name, sb.b_team, tm.league, tg.team_games
+    HAVING tg.team_games > 0 AND pa >= CEIL(3.1 * tg.team_games) AND ab > 0
     ORDER BY ave DESC, hit DESC
     LIMIT ?;
   `;
@@ -56,6 +68,7 @@ export async function fetchBatterLeaders(params: BattingQueryParams, limit = 25)
     team_initial_kana: String(r.team_initial_kana),
     league: String(r.league),
     games: Number(r.games || 0),
+    pa: Number(r.pa || 0),
     ab: Number(r.ab || 0),
     hit: Number(r.hit || 0),
     hr: Number(r.hr || 0),

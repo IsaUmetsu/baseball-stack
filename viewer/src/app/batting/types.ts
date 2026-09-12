@@ -6,6 +6,7 @@ export interface BatterLeaderRow {
   team_initial_kana: string;
   league: string;
   games: number;
+  pa: number;
   ab: number;
   hit: number;
   hr: number;

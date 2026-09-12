@@ -16,6 +16,7 @@ export function BatterLeadersTable({ rows }: Props) {
             <th className="p-2.5">球団</th>
             <th className="p-2.5 text-center">リーグ</th>
             <th className="p-2.5 text-right">試合</th>
+            <th className="p-2.5 text-right font-semibold">打席</th>
             <th className="p-2.5 text-right">打数</th>
             <th className="p-2.5 text-right font-semibold">安打</th>
             <th className="p-2.5 text-right font-semibold text-purple-600">本塁打</th>
@@ -43,6 +44,7 @@ export function BatterLeadersTable({ rows }: Props) {
                 </span>
               </td>
               <td className="p-2.5 text-right text-slate-600">{r.games}</td>
+              <td className="p-2.5 text-right text-slate-800 font-semibold">{r.pa}</td>
               <td className="p-2.5 text-right text-slate-600">{r.ab}</td>
               <td className="p-2.5 text-right text-slate-800 font-semibold">{r.hit}</td>
               <td className="p-2.5 text-right text-purple-600 font-bold">{r.hr}</td>
