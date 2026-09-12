@@ -25,3 +25,11 @@ class GameSceneRepository(ABC):
         破損している場合や未保存の場合は (0, None) を返す。
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def delete_scene(self, date_str: str, game_no: str, scene_no: int) -> None:
+        """
+        特定のシーンデータ（JSON）を削除する。
+        """
+        raise NotImplementedError
+

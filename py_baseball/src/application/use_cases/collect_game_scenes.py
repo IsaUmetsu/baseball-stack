@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from src.domain.repositories.game_scene_repository import GameSceneRepository
 from src.infrastructure.scraper.game_scene_scraper import SeleniumGameSceneScraper
+from src.infrastructure.scraper.scene_navigator import SceneStuckException
 
 
 class CollectGameScenesUseCase:
@@ -99,6 +100,8 @@ class CollectGameScenesUseCase:
         scene = file_cnt
         prev_hash = None
         c_home = c_away = c_ing = None
+        inning_retries = {}
+        MAX_RETRIES = 3
 
         while True:
             scene += 1
@@ -128,5 +131,36 @@ class CollectGameScenesUseCase:
                 o_cnt = data.liveHeader.count.o if data.liveHeader.count else 0
                 print(f"----- [done] date: {cur.strftime('%m/%d')}, game: {game_no}, {a_init} vs {h_init}, scene: {scene:3d}, {data.liveHeader.inning}, {o_cnt}アウト, {time.time()-t0:3.1f}s -----")
 
-            if not self._scraper.advance_to_next_scene(data.liveHeader.inning):
-                break
+            try:
+                if not self._scraper.advance_to_next_scene(data.liveHeader.inning):
+                    break
+            except SceneStuckException as e:
+                print(f"[WARN] {e}")
+                print(f"[INFO] Deleting stuck scene {scene} ({data.liveHeader.inning}) and retrying inning...")
+                self._repository.delete_scene(date_str, game_no, scene)
+                scene -= 1
+                prev_hash = None
+                c_home = c_away = c_ing = None
+
+                cur_inning_str = data.liveHeader.inning
+                m = re.match(r'(\d+)回(表|裏)', cur_inning_str)
+                if not m:
+                    print(f"[ERROR] Could not parse inning '{cur_inning_str}' to rewind. Breaking loop.")
+                    break
+
+                retry_ing, retry_tb = int(m.group(1)), m.group(2)
+                retry_key = (retry_ing, retry_tb)
+                inning_retries[retry_key] = inning_retries.get(retry_key, 0) + 1
+
+                if inning_retries[retry_key] > MAX_RETRIES:
+                    print(f"[ERROR] Exceeded max retries ({MAX_RETRIES}) for {cur_inning_str}. Breaking loop.")
+                    break
+
+                print(f"[INFO] Rewinding to start of {retry_ing}回{retry_tb} (retry {inning_retries[retry_key]}/{MAX_RETRIES})...")
+                if not self._scraper.navigate_to_inning(retry_ing, retry_tb):
+                    print(f"[ERROR] Failed to navigate to {retry_ing}回{retry_tb}. Breaking loop.")
+                    break
+
+                self._scraper.ensure_replay_mode()
+                self._scraper.rewind_to_start_of_inning(retry_ing, retry_tb)
+                continue

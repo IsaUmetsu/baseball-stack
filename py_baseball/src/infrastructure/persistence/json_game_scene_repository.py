@@ -60,3 +60,13 @@ class JsonGameSceneRepository(GameSceneRepository):
         except Exception as e:
             print(f"[WARN] Error reading latest saved json {latest_file_path}: {e}")
             return 0, None
+
+    def delete_scene(self, date_str: str, game_no: str, scene_no: int) -> None:
+        game_dir = self._get_game_dir(date_str, game_no)
+        file_path = os.path.join(game_dir, f"{scene_no}.json")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError as e:
+                print(f"[WARN] Failed to delete scene file {file_path}: {e}")
+

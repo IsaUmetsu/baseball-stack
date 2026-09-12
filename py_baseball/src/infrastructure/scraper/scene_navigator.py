@@ -10,6 +10,11 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from src.infrastructure.scraper.scene_selectors import SELECTORS, get_inning_selector
 
 
+class SceneStuckException(Exception):
+    """Raised when replay next is clicked but scene signature does not change within timeout."""
+    pass
+
+
 class SceneNavigator:
     def __init__(self, driver: WebDriver):
         self.driver = driver
@@ -123,17 +128,11 @@ class SceneNavigator:
             except Exception:
                 pass
 
-        print("[WARN] Scene signature did not change. Fallback to next inning.")
         ctx = self.get_content_main()
         inning_elems = ctx.find_elements(By.CSS_SELECTOR, SELECTORS["inning"])
         if inning_elems and inning_elems[0].text.strip() == "試合終了":
             return False
 
-        match = re.match(r'(\d+)回(表|裏)', current_inning_str)
-        if not match:
-            return False
+        print(f"[WARN] Scene signature did not change at {current_inning_str}.")
+        raise SceneStuckException(f"Scene signature did not change at {current_inning_str}.")
 
-        num, side = int(match.group(1)), match.group(2)
-        next_num, next_side = (num, "裏") if side == "表" else (num + 1, "表")
-        print(f"[INFO] Advancing from {current_inning_str} to {next_num}回{next_side}.")
-        return self.navigate_to_inning(next_num, next_side)
