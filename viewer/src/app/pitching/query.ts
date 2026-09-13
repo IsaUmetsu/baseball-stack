@@ -1,13 +1,13 @@
 import { query } from "@/lib/db";
 import { PitcherLeaderRow, TeamPitchingRow, PitchingQueryParams } from "./types";
 
-function buildDateWhereClause(params: PitchingQueryParams): { whereClause: string; values: any[] } {
+function buildDateWhereClause(params: PitchingQueryParams, alias = "gi"): { whereClause: string; values: any[] } {
   const { periodType, month, dow } = params;
   if (periodType === "month" && month !== undefined) {
-    return { whereClause: "WHERE MONTH(gi.date) = ?", values: [month] };
+    return { whereClause: `WHERE MONTH(${alias}.date) = ?`, values: [month] };
   }
   if (periodType === "dow" && dow !== undefined) {
-    return { whereClause: "WHERE DAYOFWEEK(gi.date) = ?", values: [dow] };
+    return { whereClause: `WHERE DAYOFWEEK(${alias}.date) = ?`, values: [dow] };
   }
   return { whereClause: "", values: [] };
 }
@@ -16,19 +16,24 @@ export async function fetchPitcherLeaders(
   params: PitchingQueryParams,
   limit = 25
 ): Promise<PitcherLeaderRow[]> {
-  const { whereClause, values } = buildDateWhereClause(params);
-  const queryValues = [...values];
+  const isReliever = params.role === "reliever";
+  const subDate = buildDateWhereClause(params, "gi_sub");
+  const mainDate = buildDateWhereClause(params, "gi");
 
-  const roleCondition = params.role === "reliever" ? "sp.order > 1" : "sp.order = 1";
-  const roleWhere = whereClause ? `${whereClause} AND ${roleCondition}` : `WHERE ${roleCondition}`;
+  const queryValues = [...subDate.values, ...mainDate.values];
+  const roleCondition = isReliever ? "sp.order > 1" : "sp.order = 1";
+  let mainWhere = mainDate.whereClause
+    ? `${mainDate.whereClause} AND ${roleCondition}`
+    : `WHERE ${roleCondition}`;
 
-  let leagueFilter = "";
   if (params.league && params.league !== "ALL") {
-    leagueFilter = " AND tm.league = ?";
+    mainWhere = `${mainWhere} AND tm.league = ?`;
     queryValues.push(params.league);
   }
 
-  const minOuts = params.role === "reliever" ? 6 : 9;
+  const havingClause = isReliever
+    ? "HAVING SUM(sp.outs) >= 6"
+    : "HAVING tg.team_games > 0 AND SUM(sp.outs) >= tg.team_games * 3";
 
   const sql = `
     SELECT 
@@ -48,9 +53,18 @@ export async function fetchPitcherLeaders(
     FROM stats_pitcher sp
     JOIN game_info gi ON sp.game_info_id = gi.id
     JOIN team_master tm ON sp.p_team = tm.team_initial_kana
-    ${roleWhere} ${leagueFilter}
-    GROUP BY sp.name, tm.team_name, sp.p_team, tm.league
-    HAVING SUM(sp.outs) >= ${minOuts}
+    JOIN (
+      SELECT 
+        sp_sub.p_team,
+        COUNT(DISTINCT sp_sub.game_info_id) AS team_games
+      FROM stats_pitcher sp_sub
+      JOIN game_info gi_sub ON sp_sub.game_info_id = gi_sub.id
+      ${subDate.whereClause}
+      GROUP BY sp_sub.p_team
+    ) tg ON sp.p_team = tg.p_team
+    ${mainWhere}
+    GROUP BY sp.name, tm.team_name, sp.p_team, tm.league, tg.team_games
+    ${havingClause}
     ORDER BY era ASC, outs DESC
     LIMIT ?;
   `;
@@ -121,3 +135,4 @@ export async function fetchTeamPitching(params: PitchingQueryParams): Promise<Te
     total_bb: Number(r.total_bb || 0),
   }));
 }
+
