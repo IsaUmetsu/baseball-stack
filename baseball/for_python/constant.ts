@@ -13,7 +13,9 @@ export const teamArray = {
   'De': 'デ',
   'D': '中',
   'C': '広',
-  'S': 'ヤ'
+  'S': 'ヤ',
+  'オールパリーグ': '全パ',
+  'オールセリーグ': '全セ'
 }
 
 export const teamHashTags = {
@@ -28,7 +30,9 @@ export const teamHashTags = {
   'De': '#baysters',
   'D': '#dragons',
   'C': '#carp',
-  'S': '#swallows'
+  'S': '#swallows',
+  'AP': '#allpacific',
+  'AS': '#allcentral'
 }
 
 export const teamNames = {
@@ -43,7 +47,9 @@ export const teamNames = {
   'De': 'DeNA',
   'D': '中日',
   'C': '広島',
-  'S': 'ヤクルト'
+  'S': 'ヤクルト',
+  'AP': 'オールパリーグ',
+  'AS': 'オールセリーグ'
 }
 
 export const teamNameHalfToIni = {
@@ -58,7 +64,9 @@ export const teamNameHalfToIni = {
   'DeNA': 'デ',
   '中日': '中',
   '広島': '広',
-  'ヤクルト': 'ヤ'
+  'ヤクルト': 'ヤ',
+  'オールパリーグ': '全パ',
+  'オールセリーグ': '全セ'
 }
 
 export const teamFullNames = {
@@ -73,7 +81,9 @@ export const teamFullNames = {
   'De': '横浜DeNAベイスターズ',
   'D': '中日ドラゴンズ',
   'C': '広島東洋カープ',
-  'S': '東京ヤクルトスワローズ'
+  'S': '東京ヤクルトスワローズ',
+  'AP': 'オールパリーグ',
+  'AS': 'オールセリーグ'
 };
 
 export const rankCircle = {
