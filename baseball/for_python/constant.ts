@@ -14,8 +14,10 @@ export const teamArray = {
   'D': '中',
   'C': '広',
   'S': 'ヤ',
-  'オールパリーグ': '全パ',
-  'オールセリーグ': '全セ'
+  'AP': '全パ',
+  'AS': '全セ',
+  'オールパリーグ': '全パ', // -- for stats
+  'オールセリーグ': '全セ'  // -- for stats
 }
 
 export const teamHashTags = {
