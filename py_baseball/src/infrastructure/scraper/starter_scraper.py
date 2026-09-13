@@ -26,8 +26,10 @@ SELECTORS = {
     "awayTeam": "#gm_recen .bb-gameCard__readMore .bb-gameCard__readMoreItem:nth-child(2) span",
     "homeTeam": "#gm_recen .bb-gameCard__readMore .bb-gameCard__readMoreItem:nth-child(1) span",
     "strtPit": "#strt_pit",
-    "awayStartPitcher": "#strt_pit .bb-splits__item:nth-child(2) header h1 a",
-    "homeStartPitcher": "#strt_pit .bb-splits__item:nth-child(1) header h1 a",
+    "awayStartPitcher": "#strt_pit section.bb-splits__item:nth-of-type(2) .bb-splitsPitcherStarting table tbody tr td:nth-child(3)",
+    "homeStartPitcher": "#strt_pit section.bb-splits__item:nth-of-type(1) .bb-splitsPitcherStarting table tbody tr td:nth-child(3)",
+    "awayStartPitcherOld": "#strt_pit .bb-splits__item:nth-child(2) header h1 a",
+    "homeStartPitcherOld": "#strt_pit .bb-splits__item:nth-child(1) header h1 a",
     "ingBrd": "#ing_brd",
     "awayTeamPast": "#ing_brd tbody tr:nth-child(1) td:nth-child(1)",
     "homeTeamPast": "#ing_brd tbody tr:nth-child(2) td:nth-child(1)",
@@ -73,7 +75,6 @@ class SeleniumStarterScraper:
                     game_nos.append(raw_id[4:] if raw_id.startswith("2021") else raw_id)
         return game_nos
 
-
     def scrape_game_starter(self, game_no_str: str, target_date: datetime.date) -> Optional[StarterInfo]:
         date_game_no = f"2021{game_no_str}"
         top_url = (
@@ -111,21 +112,32 @@ class SeleniumStarterScraper:
             away_pitcher, home_pitcher = "", ""
             strt_pit_elems = self._driver.find_elements(By.CSS_SELECTOR, SELECTORS["strtPit"])
             if strt_pit_elems:
-                away_pitcher = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["awayStartPitcher"]).text.strip()
-                home_pitcher = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["homeStartPitcher"]).text.strip()
+                away_pitcher = self._find_starter_pitcher(SELECTORS["awayStartPitcher"], SELECTORS["awayStartPitcherOld"])
+                home_pitcher = self._find_starter_pitcher(SELECTORS["homeStartPitcher"], SELECTORS["homeStartPitcherOld"])
             else:
-                away_pitcher = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["awayStartPitcherPast"]).text.strip()
-                home_pitcher = self._driver.find_element(By.CSS_SELECTOR, SELECTORS["homeStartPitcherPast"]).text.strip()
+                away_elems = self._driver.find_elements(By.CSS_SELECTOR, SELECTORS["awayStartPitcherPast"])
+                home_elems = self._driver.find_elements(By.CSS_SELECTOR, SELECTORS["homeStartPitcherPast"])
+                away_pitcher = away_elems[0].text.strip() if away_elems else ""
+                home_pitcher = home_elems[0].text.strip() if home_elems else ""
 
             return StarterInfo(
                 start=start_time,
-                away=TeamStarter(team=away, pitcher=away_pitcher),
-                home=TeamStarter(team=home, pitcher=home_pitcher),
+                away=TeamStarter(team=away, pitcher=away_pitcher if away_pitcher else None),
+                home=TeamStarter(team=home, pitcher=home_pitcher if home_pitcher else None),
             )
 
-        except NoSuchElementException:
-            # 万が一状態判定をすり抜けた場合の中止フォールバック
-            return self._extract_cancelled_game()
+        except Exception as e:
+            print(f"[WARN] Failed to scrape starter details for game {game_no_str}: {e}")
+            return None
+
+    def _find_starter_pitcher(self, primary_selector: str, fallback_selector: str) -> str:
+        elems = self._driver.find_elements(By.CSS_SELECTOR, primary_selector)
+        if elems:
+            return elems[0].text.strip()
+        fallback_elems = self._driver.find_elements(By.CSS_SELECTOR, fallback_selector)
+        if fallback_elems:
+            return fallback_elems[0].text.strip()
+        return ""
 
     def _extract_cancelled_game(self) -> Optional[StarterInfo]:
         try:
@@ -165,4 +177,3 @@ class SeleniumStarterScraper:
         except Exception as e:
             print(f"[ERROR] Failed to parse cancelled game: {e}")
             return None
-
