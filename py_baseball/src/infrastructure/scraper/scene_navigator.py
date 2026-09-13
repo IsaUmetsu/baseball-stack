@@ -75,28 +75,9 @@ class SceneNavigator:
                 break
 
     def rewind_to_start_of_inning(self, from_inning: int, from_top_btm: str) -> None:
-        if from_inning <= 1 and from_top_btm == "表":
-            return
-
-        ctx = self.get_content_main()
-        back_elems = ctx.find_elements(By.CSS_SELECTOR, SELECTORS["replayBack"])
-        if back_elems:
-            self.safe_click(back_elems[0])
-
-        while True:
-            ctx = self.get_content_main()
-            cnt_elems = ctx.find_elements(By.CSS_SELECTOR, SELECTORS["inningBatterCnt"])
-            cnt_text = cnt_elems[0].text.strip() if cnt_elems else ""
-            if len(cnt_text) > 0:
-                nxt = ctx.find_elements(By.CSS_SELECTOR, SELECTORS["replayNext"])
-                if nxt:
-                    self.safe_click(nxt[0])
-                break
-            else:
-                back = ctx.find_elements(By.CSS_SELECTOR, SELECTORS["replayBack"])
-                if not back:
-                    break
-                self.safe_click(back[0])
+        # イニングタブ遷移後は既にそのイニングの先頭（シート変更または打者1）にいるため、
+        # 前のイニングに巻き戻す処理は行わず、画面表示の安定を待機する
+        time.sleep(1.0)
 
     def get_scene_signature(self) -> Optional[Tuple[str, ...]]:
         try:
@@ -135,4 +116,5 @@ class SceneNavigator:
 
         print(f"[WARN] Scene signature did not change at {current_inning_str}.")
         raise SceneStuckException(f"Scene signature did not change at {current_inning_str}.")
+
 

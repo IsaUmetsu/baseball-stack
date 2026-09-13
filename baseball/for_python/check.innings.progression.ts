@@ -29,7 +29,7 @@ const rerunCommands: string[] = [];
 const addRerunCommand = (dateStr: string, targetGameNo: string) => {
   const mmdd = dateStr.slice(4);
   const gameNoNum = Number(targetGameNo);
-  const rerunCmd = `docker compose exec py python3 game_scenes.py --date ${mmdd} -s ${gameNoNum}`;
+  const rerunCmd = `docker compose exec py python3 src/main_scenes.py --date ${mmdd} -s ${gameNoNum}`;
   if (!rerunCommands.includes(rerunCmd)) {
     rerunCommands.push(rerunCmd);
   }
