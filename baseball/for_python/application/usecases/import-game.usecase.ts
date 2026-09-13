@@ -31,6 +31,10 @@ export class ImportGameUseCase {
     }
 
     const cards = this.fileDataSource.getCardsJson(dateStr, gameNoStr);
+    if ((cards as { start?: string })?.start === "試合中止") {
+      isNoGame = true;
+    }
+
     const awayInitial = teams[cards.away.team];
     const homeInitial = teams[cards.home.team];
 
@@ -49,7 +53,7 @@ export class ImportGameUseCase {
         );
       }
 
-      if (sceneModels.length > 0) {
+      if (!isNoGame && sceneModels.length > 0) {
         await this.sceneRepository.saveAll(gameInfoId, sceneModels, manager);
       }
 
@@ -58,9 +62,14 @@ export class ImportGameUseCase {
           "----- [game] finished: date: [%s], gameNo: [%s] %s -----",
           dateStr,
           gameNoStr,
-          sceneCnt === 0 ? "but not imported [because not complete game]" : ""
+          isNoGame
+            ? "but not imported [because no game]"
+            : sceneCnt === 0
+            ? "but not imported [because not complete game]"
+            : ""
         )
       );
     });
   }
 }
+
