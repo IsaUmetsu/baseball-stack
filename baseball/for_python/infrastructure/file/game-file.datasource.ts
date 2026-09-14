@@ -44,4 +44,32 @@ export class GameFileDataSource {
       return undefined;
     }
   }
+
+  public deleteScenes(dateStr: string, gameNo: string, fromScene: number, toScene: number): number {
+    let deletedCount = 0;
+    for (let s = fromScene; s <= toScene; s++) {
+      const filePath = format(this.jsonPath, dateStr, gameNo, s);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        deletedCount++;
+      }
+    }
+    return deletedCount;
+  }
+
+  public removeDuplicateAndRenumber(dateStr: string, gameNo: string, duplicateSceneNo: number, totalSceneCnt: number): void {
+    const dupFilePath = format(this.jsonPath, dateStr, gameNo, duplicateSceneNo);
+    if (fs.existsSync(dupFilePath)) {
+      fs.unlinkSync(dupFilePath);
+    }
+
+    for (let s = duplicateSceneNo + 1; s <= totalSceneCnt; s++) {
+      const oldPath = format(this.jsonPath, dateStr, gameNo, s);
+      const newPath = format(this.jsonPath, dateStr, gameNo, s - 1);
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+      }
+    }
+  }
 }
+
