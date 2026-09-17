@@ -1,10 +1,21 @@
 import datetime
+import re
 import traceback
 from typing import List, Optional
 
 from src.domain.repositories.game_stats_repository import GameStatsRepository
 from src.infrastructure.scraper.game_stats_scraper import SeleniumGameStatsScraper
 from src.infrastructure.scraper.scene_selectors import is_tokyo_olympics_period
+
+
+def is_game_started(game_state: str) -> bool:
+    if not game_state:
+        return False
+    if any(keyword in game_state for keyword in ["試合中止", "ノーゲーム", "中止", "試合前", "見どころ", "予告先発"]):
+        return False
+    if "試合終了" in game_state or re.search(r"\d+回", game_state) or "回" in game_state:
+        return True
+    return False
 
 
 class CollectGameStatsUseCase:
@@ -56,16 +67,19 @@ class CollectGameStatsUseCase:
                         )
                         continue
 
+                    if not is_game_started(game_state):
+                        print(f"  [SKIP] Game {date_game_no} has not started yet (state: {game_state}).")
+                        continue
+
                     pitcher_data, batter_data = self._scraper.scrape_game_stats(
                         date_game_no, current_date, is_finished
                     )
                     self._repository.save_pitcher_stats(date_str, file_name, pitcher_data)
                     self._repository.save_batter_stats(date_str, file_name, batter_data)
 
-                    if game_state not in ["試合中止", "ノーゲーム", "試合前"]:
-                        text_data = self._scraper.scrape_text_stats(date_game_no, current_date)
-                        if text_data is not None:
-                            self._repository.save_text_stats(date_str, file_name, text_data)
+                    text_data = self._scraper.scrape_text_stats(date_game_no, current_date)
+                    if text_data is not None:
+                        self._repository.save_text_stats(date_str, file_name, text_data)
 
                     print(f"  [DONE] Saved stats for game {date_game_no} as {file_name}")
 
