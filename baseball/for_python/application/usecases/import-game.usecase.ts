@@ -30,6 +30,12 @@ export class ImportGameUseCase {
       }
     }
 
+    if (!this.fileDataSource.existCardsJson(dateStr, gameNoStr)) {
+      const filePath = this.fileDataSource.getCardsJsonPath(dateStr, gameNoStr);
+      console.error(format("ファイルがありません: %s", filePath));
+      return;
+    }
+
     const cards = this.fileDataSource.getCardsJson(dateStr, gameNoStr);
     if ((cards as { start?: string })?.start === "試合中止") {
       isNoGame = true;

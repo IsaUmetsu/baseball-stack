@@ -31,6 +31,15 @@ export class GameFileDataSource {
     return await countFiles(format(this.gamePath, dateStr, gameNo));
   }
 
+  public existCardsJson(dateStr: string, gameNo: string): boolean {
+    const filePath = format(this.cardsJsonPath, dateStr, gameNo);
+    return fs.existsSync(filePath);
+  }
+
+  public getCardsJsonPath(dateStr: string, gameNo: string): string {
+    return format(this.cardsJsonPath, dateStr, gameNo);
+  }
+
   public getCardsJson(dateStr: string, gameNo: string): { away: { team: string }; home: { team: string } } {
     const filePath = format(this.cardsJsonPath, dateStr, gameNo);
     return JSON.parse(getJson(filePath));
