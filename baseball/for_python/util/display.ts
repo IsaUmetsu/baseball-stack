@@ -314,15 +314,24 @@ export const displayResult = (title: string, rows: string[], footer?: string) =>
 /**
  * 
  */
-export const checkArgDaySeasonEndSpecify = (day = '', seasonEnd = '', specify = '') => {
+export const checkArgDaySeasonEndSpecify = (day = '', seasonEnd = '', specify = '', seasonStart = '') => {
   let targetDay = day;
   let seasonEndArg = seasonEnd;
   let specifyArg = specify;
 
+  if (seasonStart) {
+    targetDay = seasonStart;
+  }
+
+  if (day && !seasonStart && !seasonEnd) {
+    targetDay = day;
+    seasonEndArg = day;
+  }
+
   if (!targetDay) {
     // console.log('D=[保存開始日] の指定がありません。2020/06/19 を指定します。');
     // targetDay = moment("2020-06-19").format("MMDD");
-    console.log('D=[保存開始日] の指定がありません。実行日を指定します。');
+    console.log('D=[保存開始日] または SS=[シーズン開始日] の指定がありません。実行日を指定します。');
     targetDay = moment().format("MMDD");
   }
   
